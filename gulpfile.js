@@ -13,7 +13,7 @@ var babel = require('gulp-babel');
 // when they're loaded
 require('babel-core/register');
 
-gulp.task('static', function () {
+gulp.task('static', function() {
   return gulp.src('**/*.js')
     .pipe(excludeGitignore())
     .pipe(eslint())
@@ -21,31 +21,34 @@ gulp.task('static', function () {
     .pipe(eslint.failAfterError());
 });
 
-gulp.task('nsp', function (cb) {
+gulp.task('nsp', function(cb) {
   nsp('package.json', cb);
 });
 
-gulp.task('pre-test', function () {
+gulp.task('pre-test', function() {
   return gulp.src('lib/**/*.js')
     .pipe(babel())
     .pipe(istanbul({includeUntested: true}))
     .pipe(istanbul.hookRequire());
 });
 
-gulp.task('test', ['pre-test'], function (cb) {
+gulp.task('test', ['pre-test'], function(cb) {
   gulp.src('test/**/*.js')
     .pipe(plumber())
     .pipe(mocha({reporter: 'spec'}))
-    .on('error', function (err) {
+    .on('error', function(err) {
       cb(err);
     })
     .pipe(istanbul.writeReports({
-      reporters: ['json', 'text', 'text-summary']
-      //reporters: ['json', 'text', 'text-summary', 'lcov']
-    }));
+      //reporters: ['json', 'text', 'text-summary']
+      reporters: ['json', 'text', 'text-summary', 'lcov']
+    }))
+    .on('end', function() {
+      cb();
+    });
 });
 
-gulp.task('coveralls', ['test'], function () {
+gulp.task('coveralls', ['test'], function() {
   if (!process.env.CI) {
     return;
   }
@@ -54,7 +57,7 @@ gulp.task('coveralls', ['test'], function () {
     .pipe(coveralls());
 });
 
-gulp.task('babel', function () {
+gulp.task('babel', function() {
   return gulp.src('lib/**/*.js')
     .pipe(babel())
     .pipe(gulp.dest('dist'));
