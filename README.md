@@ -29,4 +29,5 @@ MIT © [Andre Gloria](andrglo.com)
 [travis-url]: https://travis-ci.org/andrglo/json-schema-table
 [daviddm-image]: https://david-dm.org/andrglo/json-schema-table.svg?theme=shields.io
 [daviddm-url]: https://david-dm.org/andrglo/json-schema-table
-[![Coverage Status](https://coveralls.io/repos/andrglo/json-schema-table/badge.svg?branch=master&service=github)](https://coveralls.io/github/andrglo/json-schema-table?branch=master)
+[coveralls-image]: https://coveralls.io/repos/andrglo/json-schema-table/badge.svg?branch=master&service=github
+[coveralls-url]: https://coveralls.io/github/andrglo/json-schema-table?branch=master
