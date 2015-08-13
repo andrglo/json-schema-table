@@ -1,0 +1,43 @@
+{
+  "name": "json-schema-table",
+  "version": "0.0.0",
+  "description": "SQL query builder for maintenance and queries based on json schema",
+  "homepage": "",
+  "repository": "https://github.com/andrglo/json-schema-table.git",
+  "author": {
+    "name": "Andre Gloria",
+    "email": "andredagloria@gmail.com",
+    "url": "andrglo.com"
+  },
+  "files": [
+    "dist"
+  ],
+  "main": "dist/index.js",
+  "keywords": [
+    "json",
+    "schema",
+    "SQL",
+    "Postgres",
+    "mssql"
+  ],
+  "devDependencies": {
+    "gulp": "^3.6.0",
+    "gulp-eslint": "^0.15.0",
+    "gulp-exclude-gitignore": "^1.0.0",
+    "gulp-istanbul": "^0.9.0",
+    "gulp-mocha": "^2.0.0",
+    "gulp-plumber": "^1.0.0",
+    "gulp-nsp": "^0.4.5",
+    "gulp-coveralls": "^0.1.0",
+    "gulp-babel": "^5.1.0",
+    "babel-core": "^5.5.0"
+  },
+  "scripts": {
+    "prepublish": "gulp prepublish",
+    "test": "gulp"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "lodash": "^3.10.1"
+  }
+}
