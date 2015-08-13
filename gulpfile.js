@@ -40,8 +40,8 @@ gulp.task('test', ['pre-test'], function (cb) {
       cb(err);
     })
     .pipe(istanbul.writeReports({
-      //reporters: ['json', 'text', 'text-summary']
-      reporters: ['json', 'text', 'text-summary', 'lcov']
+      reporters: ['json', 'text', 'text-summary']
+      //reporters: ['json', 'text', 'text-summary', 'lcov']
     }));
 });
 
