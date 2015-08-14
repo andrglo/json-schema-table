@@ -1,0 +1,16 @@
+{
+  "type": "object",
+  "title": "Classe",
+  "description": "Classes de pessoas no cadastro",
+  "properties": {
+    "id": {
+      "title": "Nome",
+      "description": "Nome",
+      "type": "string",
+      "maxLength": 20,
+      "required": true,
+      "field": "Nome",
+      "primaryKey": true
+    }
+  }
+}

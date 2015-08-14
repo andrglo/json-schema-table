@@ -26,25 +26,27 @@ gulp.task('nsp', function(cb) {
 });
 
 gulp.task('pre-test', function() {
-  return gulp.src('lib/**/*.js')
-    .pipe(babel())
-    .pipe(istanbul({includeUntested: true}))
-    .pipe(istanbul.hookRequire());
+  //return gulp.src('lib/**/*.js')
+  //  .pipe(babel())
+  //  .pipe(istanbul({includeUntested: true}))
+  //  .pipe(istanbul.hookRequire());
 });
 
 gulp.task('test', ['pre-test'], function(cb) {
-  gulp.src('test/**/*.js')
+  var error;
+  gulp.src('test/index.js')
     .pipe(plumber())
     .pipe(mocha({reporter: 'spec'}))
-    .on('error', function(err) {
-      cb(err);
+    .on('error', function(e) {
+      error = e;
+      cb(error);
     })
-    .pipe(istanbul.writeReports({
-      //reporters: ['json', 'text', 'text-summary']
-      reporters: ['json', 'text', 'text-summary', 'lcov']
-    }))
+    //.pipe(istanbul.writeReports({
+    //  //reporters: ['json', 'text', 'text-summary']
+    //  reporters: ['json', 'text', 'text-summary', 'lcov']
+    //}))
     .on('end', function() {
-      cb();
+      if (!error) cb();
     });
 });
 

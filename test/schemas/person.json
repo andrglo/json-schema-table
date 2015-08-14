@@ -1,0 +1,33 @@
+{
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "integer",
+      "autoIncrement": true,
+      "primaryKey": true,
+      "field": "personId"
+    },
+    "name": {
+      "type": "string",
+      "maxLength": 60
+    },
+    "number": {
+      "type": "number",
+      "maxLength": 6
+    },
+    "description": {
+      "type": "text"
+    },
+    "state": {
+      "type": "string",
+      "maxLength": 2,
+      "$ref": "state"
+    },
+    "dateOfBirth": {
+      "type": "date"
+    }
+  },
+  "required": [
+    "name"
+  ]
+}

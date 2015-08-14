@@ -55,7 +55,7 @@
       "1tbs"
     ],
     "curly": [
-      2,
+      1,
       "all"
     ],
     "key-spacing": [
@@ -135,7 +135,7 @@
     "no-delete-var": 2,
     "no-label-var": 2,
     "no-shadow-restricted-names": 2,
-    "no-shadow": 2,
+    "no-shadow": 1,
     "no-undef-init": 2,
     "no-undef": 2,
     "no-unused-vars": [
@@ -166,7 +166,7 @@
         "after": true
       }
     ],
-    "semi": 2,
+    "semi": 1,
     "space-return-throw-case": 2
   },
   "env": {
