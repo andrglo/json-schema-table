@@ -48,7 +48,7 @@ function checkForeignKey(fks, fk, table, column) {
   fk.references.should.have.property('table');
   expect(fk.references.table).to.equal(table);
   fk.references.should.have.property('column');
-  expect(fk.references.column).to.equal(column);
+  expect(fk.references.column.toLowerCase()).to.equal(column.toLowerCase());
 }
 
 export default function(db) {
