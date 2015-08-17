@@ -1,11 +1,15 @@
 import jsonSchemaTable from '../lib';
-import personSchema from './schemas/person.json';
-import clientSchema from './schemas/client.json';
-import façadeSchema from './schemas/façade.json';
-import personFaçadeSchema from './schemas/personFaçade.json';
-import taxSchema from './schemas/tax.json';
 import chai from 'chai';
 import _ from 'lodash';
+
+var personSchema = require('./schemas/person.json');
+var clientSchema = require('./schemas/client.json');
+var façadeSchema = require('./schemas/façade.json');
+var personFaçadeSchema = require('./schemas/personFaçade.json');
+var taxSchema = require('./schemas/tax.json');
+
+var modifiedClientSchema;
+var modifiedTaxSchema;
 
 var expect = chai.expect;
 chai.should();
@@ -100,8 +104,9 @@ export default function(db) {
         });
     });
     it('should create client', function(done) {
-      delete clientSchema.properties.taxes;
-      let client = jsonSchemaTable('client', clientSchema, {db: db});
+      modifiedClientSchema = _.cloneDeep(clientSchema);
+      delete modifiedClientSchema.properties.taxes;
+      let client = jsonSchemaTable('client', modifiedClientSchema, {db: db});
       client.create()
         .then(function() {
           return client.metadata()
@@ -113,8 +118,8 @@ export default function(db) {
               expect(metadata.primaryKey[0]).to.equal('clientId');
               metadata.should.have.property('columns');
               expect(metadata.columns).to.be.a('object');
-              let createdSchema = _.extend({}, clientSchema);
-              createdSchema.properties = _.pick(clientSchema.properties, [
+              let createdSchema = _.extend({}, modifiedClientSchema);
+              createdSchema.properties = _.pick(modifiedClientSchema.properties, [
                 'id', 'initials', 'sales'
               ]);
               checkColumns(metadata.columns, createdSchema);
@@ -208,7 +213,7 @@ export default function(db) {
         });
     });
     it('should not add foreign key to table client due tax has two columns as primary keys', function(done) {
-      let client = jsonSchemaTable('client', clientSchema, {db: db});
+      let client = jsonSchemaTable('client', modifiedClientSchema, {db: db});
       client.sync()
         .then(function() {
           done(new Error('Invalid reference created'));
@@ -222,10 +227,11 @@ export default function(db) {
         });
     });
     it('then lets alter tax to add a single column primary key', function(done) {
-      taxSchema.properties.id = {type: 'integer', autoIncrement: true, primaryKey: true}
-      taxSchema.required = taxSchema.primaryKey;
-      delete taxSchema.primaryKey;
-      let tax = jsonSchemaTable('tax', taxSchema, {db: db});
+      modifiedTaxSchema = _.cloneDeep(taxSchema);
+      modifiedTaxSchema.properties.id = {type: 'integer', autoIncrement: true, primaryKey: true}
+      modifiedTaxSchema.required = modifiedTaxSchema.primaryKey;
+      delete modifiedTaxSchema.primaryKey;
+      let tax = jsonSchemaTable('tax', modifiedTaxSchema, {db: db});
       tax.sync()
         .then(function() {
           return tax.metadata()
@@ -237,7 +243,7 @@ export default function(db) {
               expect(metadata.primaryKey[0]).to.equal('id');
               metadata.should.have.property('columns');
               expect(metadata.columns).to.be.a('object');
-              checkColumns(metadata.columns, taxSchema);
+              checkColumns(metadata.columns, modifiedTaxSchema);
               done();
             });
         })
@@ -246,7 +252,7 @@ export default function(db) {
         });
     });
     it('should add 4 foreign key to table client', function(done) {
-      let client = jsonSchemaTable('client', clientSchema, {db: db});
+      let client = jsonSchemaTable('client', modifiedClientSchema, {db: db});
       client.sync()
         .then(function() {
           return client.metadata()
@@ -300,8 +306,9 @@ export default function(db) {
 
     describe('modify structure', function() {
       it('should not alter person column dateOfBirth', function(done) {
-        personSchema.properties.dateOfBirth.type = 'string';
-        let person = jsonSchemaTable('person', personSchema, {db: db});
+        let modifiedPersonSchema = _.cloneDeep(personSchema);
+        modifiedPersonSchema.properties.dateOfBirth.type = 'string';
+        let person = jsonSchemaTable('person', modifiedPersonSchema, {db: db});
         person.sync()
           .then(function() {
             done(new Error('Invalid alter table'));
@@ -315,8 +322,8 @@ export default function(db) {
           });
       });
       it('should not alter client column initials to a small string', function(done) {
-        clientSchema.properties.initials.maxLength = 2;
-        let client = jsonSchemaTable('client', clientSchema, {db: db});
+        modifiedClientSchema.properties.initials.maxLength = 2;
+        let client = jsonSchemaTable('client', modifiedClientSchema, {db: db});
         client.sync()
           .then(function() {
             done(new Error('Invalid alter table'));
@@ -330,15 +337,15 @@ export default function(db) {
           });
       });
       it('should alter client column initials to a bigger string', function(done) {
-        clientSchema.properties.initials.maxLength = 21;
-        let client = jsonSchemaTable('client', clientSchema, {db: db});
+        modifiedClientSchema.properties.initials.maxLength = 21;
+        let client = jsonSchemaTable('client', modifiedClientSchema, {db: db});
         client.sync()
           .then(function() {
             return client.metadata()
               .then(function(metadata) {
                 metadata.should.have.property('columns');
                 expect(metadata.columns).to.be.a('object');
-                checkColumns(metadata.columns, clientSchema);
+                checkColumns(metadata.columns, modifiedClientSchema);
                 done();
               });
           })
@@ -347,8 +354,8 @@ export default function(db) {
           });
       });
       it('should not alter client column sales to a small number of decimals', function(done) {
-        clientSchema.properties.sales.decimals = 4;
-        let client = jsonSchemaTable('client', clientSchema, {db: db});
+        modifiedClientSchema.properties.sales.decimals = 4;
+        let client = jsonSchemaTable('client', modifiedClientSchema, {db: db});
         client.sync()
           .then(function() {
             done(new Error('Invalid alter table'));
@@ -362,8 +369,8 @@ export default function(db) {
           });
       });
       it('should not alter client column sales to a bigger number of decimals', function(done) {
-        clientSchema.properties.sales.decimals = 8;
-        let client = jsonSchemaTable('client', clientSchema, {db: db});
+        modifiedClientSchema.properties.sales.decimals = 8;
+        let client = jsonSchemaTable('client', modifiedClientSchema, {db: db});
         client.sync()
           .then(function() {
             done(new Error('Invalid alter table'));
@@ -377,8 +384,8 @@ export default function(db) {
           });
       });
       it('should not alter client column sales to a bigger number of decimals with no equivalent greater length', function(done) {
-        clientSchema.properties.sales.maxLength = 21;
-        let client = jsonSchemaTable('client', clientSchema, {db: db});
+        modifiedClientSchema.properties.sales.maxLength = 21;
+        let client = jsonSchemaTable('client', modifiedClientSchema, {db: db});
         client.sync()
           .then(function() {
             done(new Error('Invalid alter table'));
@@ -392,15 +399,15 @@ export default function(db) {
           });
       });
       it('should alter client column sales to a bigger number of decimals and length', function(done) {
-        clientSchema.properties.sales.maxLength = 22;
-        let client = jsonSchemaTable('client', clientSchema, {db: db});
+        modifiedClientSchema.properties.sales.maxLength = 22;
+        let client = jsonSchemaTable('client', modifiedClientSchema, {db: db});
         client.sync()
           .then(function() {
             return client.metadata()
               .then(function(metadata) {
                 metadata.should.have.property('columns');
                 expect(metadata.columns).to.be.a('object');
-                checkColumns(metadata.columns, clientSchema);
+                checkColumns(metadata.columns, modifiedClientSchema);
                 done();
               });
           })
