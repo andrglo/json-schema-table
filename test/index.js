@@ -41,8 +41,6 @@ function createMssqlDb() {
     'IF EXISTS(select * from sys.databases where name=\'' +
     dbName + '\') DROP DATABASE [' + dbName + '];' +
     'CREATE DATABASE [' + dbName + '];'
-    //+
-    //'USE [' + dbName + '];'
   );
 }
 
@@ -51,16 +49,12 @@ before(function(done) {
     .then(function() {
       return createMssqlDb()
         .then(function() {
-          return mssql.close().then(function() {
-            mssqlConfig.database = process.env.MSSQL_DATABASE || databaseName;
-
-            return mssql.connect(mssqlConfig)
-          })
+          return mssql.close();
         })
-        .catch(function(e){
-        console.log('aquii', e)
-        done(e)
-      })
+        .then(function() {
+          mssqlConfig.database = process.env.MSSQL_DATABASE || databaseName;
+          return mssql.connect(mssqlConfig);
+        });
     })
     .then(function() {
       return createPostgresDb();
