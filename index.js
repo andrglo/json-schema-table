@@ -1,5 +1,3 @@
-'use strict';
-
 var _ = require('lodash');
 var assert = require('assert');
 
@@ -11,7 +9,7 @@ var log = console.log;
 function jsonSchemaTable(tableName, schema, config) {
   config = config || {};
   assert(config.db, 'Database connector not informed, should be one of: mssql or pg-promise');
-  let dialect = {
+  var dialect = {
     name: whichDialect(config.db)
   };
   dialect.db = getDriverAbstractionLayer(dialect.name, config.db);
@@ -44,14 +42,14 @@ function jsonSchemaTable(tableName, schema, config) {
     metadata: function() {
       return getDbMetadata(dialect, tableName, schema)
         .then(function(metadata) {
-          let tableMetadata = {columns: metadata.columns};
-          let primaryKey = metadata.tablesWithPrimaryKey[tableName];
+          var tableMetadata = {columns: metadata.columns};
+          var primaryKey = metadata.tablesWithPrimaryKey[tableName];
           if (primaryKey) {
             tableMetadata.primaryKey = primaryKey.map(function(column) {
               return column.column;
             });
           }
-          let foreignKeys = metadata.tablesWithForeignKeys[tableName];
+          var foreignKeys = metadata.tablesWithForeignKeys[tableName];
           if (foreignKeys) {
             tableMetadata.foreignKeys = foreignKeys.map(function(foreignKey) {
               return {
@@ -70,8 +68,8 @@ function jsonSchemaTable(tableName, schema, config) {
 }
 
 function getDbMetadata(dialect, tableName, schema) {
-  let dbToProperty = dialect.name === 'mssql' ? mssqlToProperty : postgresToProperty;
-  let metadata = {
+  var dbToProperty = dialect.name === 'mssql' ? mssqlToProperty : postgresToProperty;
+  var metadata = {
     tablesWithPrimaryKey: {},
     tablesWithForeignKeys: {},
     columns: {}
@@ -86,8 +84,8 @@ function getDbMetadata(dialect, tableName, schema) {
     .then(function(recordset) {
       recordset.map(function(record) {
         record.constraint_name = record.constraint_name.toLowerCase();
-        if (record.constraint_name.startsWith('pk__')) {
-          let name = getPkConstraintInfo(record.constraint_name, record.ordinal_position);
+        if (record.constraint_name.substr(0, 4) === 'pk__') {
+          var name = getPkConstraintInfo(record.constraint_name, record.ordinal_position);
           metadata.tablesWithPrimaryKey[record.table_name] =
             metadata.tablesWithPrimaryKey[record.table_name] || [];
           metadata.tablesWithPrimaryKey[record.table_name].push({
@@ -95,8 +93,8 @@ function getDbMetadata(dialect, tableName, schema) {
             column: record.column_name,
             property: dbToProperty(record, name)
           });
-        } else if (record.constraint_name.startsWith('fk__')) {
-          let constraintInfo = getFkConstraintInfo(record.constraint_name);
+        } else if (record.constraint_name.substr(0, 4) === 'fk__') {
+          var constraintInfo = getFkConstraintInfo(record.constraint_name);
           metadata.tablesWithForeignKeys[record.table_name] =
             metadata.tablesWithForeignKeys[record.table_name] || [];
           metadata.tablesWithForeignKeys[record.table_name].push({
@@ -124,11 +122,11 @@ function getDbMetadata(dialect, tableName, schema) {
 
 function createTable(dialect, tableName, schema) {
 
-  let columns = [];
-  let primaryKey = [];
-  let delimiters = dialect.delimiters;
+  var columns = [];
+  var primaryKey = [];
+  var delimiters = dialect.delimiters;
   _.forEach(schema.properties, function(property, name) {
-    let fieldName = property.field || name;
+    var fieldName = property.field || name;
     var fieldType = dialect.propertyToDb(property, name, schema);
     if (fieldType === void 0) {
       return;
@@ -156,12 +154,12 @@ function createTable(dialect, tableName, schema) {
 
 function alterTable(dialect, tableName, schema, metadata) {
 
-  let commands = [];
-  let primaryKey = [];
-  let delimiters = dialect.delimiters;
+  var commands = [];
+  var primaryKey = [];
+  var delimiters = dialect.delimiters;
   _.forEach(schema.properties, function(property, name) {
 
-    let fieldName = property.field || name;
+    var fieldName = property.field || name;
     var fieldType = dialect.propertyToDb(property, name, schema, true);
     if (fieldType === void 0) {
       return;
@@ -188,7 +186,7 @@ function alterTable(dialect, tableName, schema, metadata) {
     }
   });
   assert(primaryKey.length, 'Table ' + tableName + ' has no primary keys');
-  let oldPrimaryKey = metadata.tablesWithPrimaryKey[tableName].map(function(column) {
+  var oldPrimaryKey = metadata.tablesWithPrimaryKey[tableName].map(function(column) {
     return column.column;
   });
   if (_.difference(primaryKey, oldPrimaryKey).length) {
@@ -207,20 +205,20 @@ function alterTable(dialect, tableName, schema, metadata) {
 function createTableReferences(dialect, tableName, schema, metadata) {
 
 
-  let commands = [];
-  let delimiters = dialect.delimiters;
+  var commands = [];
+  var delimiters = dialect.delimiters;
   _.forEach(schema.properties, function(property, name) {
-    let $ref = property.$ref || (property.schema && property.schema.$ref);
+    var $ref = property.$ref || (property.schema && property.schema.$ref);
     if ($ref) {
-      let foreignKey = property.field || name;
-      let referenceTableName = getReferenceTableName($ref);
+      var foreignKey = property.field || name;
+      var referenceTableName = getReferenceTableName($ref);
       if (metadata.tablesWithPrimaryKey[referenceTableName] && !(metadata.tablesWithForeignKeys[tableName] &&
         _.find(metadata.tablesWithForeignKeys[tableName], 'column', foreignKey))) {
         assert(metadata.tablesWithPrimaryKey[referenceTableName].length === 1,
           'Table ' + referenceTableName +
           ' should have a primary key with only one field to be referenced');
         var referenceTablePrimaryKey = metadata.tablesWithPrimaryKey[referenceTableName][0];
-        let constraintName = 'FK__' + tableName + '__' + foreignKey + '__' +
+        var constraintName = 'FK__' + tableName + '__' + foreignKey + '__' +
           referenceTableName + '__' + referenceTablePrimaryKey.column;
         var cmd = 'ALTER TABLE ' + wrap(tableName, delimiters) +
           ' ADD CONSTRAINT ' + wrap(constraintName, delimiters) + ' FOREIGN KEY (' +
@@ -239,7 +237,7 @@ function createTableReferences(dialect, tableName, schema, metadata) {
 }
 
 function propertyToMssql(property, name, schema) {
-  let column;
+  var column;
   switch (property.type) {
     case 'integer':
       column = 'INT';
@@ -280,7 +278,7 @@ function propertyToMssql(property, name, schema) {
 }
 
 function mssqlToProperty(metadata, name) {
-  let property = {};
+  var property = {};
   switch (metadata.data_type) {
     case 'int':
       property.type = 'integer';
@@ -312,7 +310,7 @@ function mssqlToProperty(metadata, name) {
 }
 
 function propertyToPostgres(property, name, schema, isAlter) {
-  let column;
+  var column;
   switch (property.type) {
     case 'integer':
       if (property.autoIncrement === true) {
@@ -381,7 +379,7 @@ function postgresSetNull(property, name, schema) {
 }
 
 function postgresToProperty(metadata, name) {
-  let property = {};
+  var property = {};
   switch (metadata.data_type) {
     case 'integer':
     case 'text':
@@ -412,12 +410,12 @@ function tableExists(metadata) {
 }
 
 function checkTableStructure(dialect, tableName, schema, metadata) {
-  let command = alterTable(dialect, tableName, schema, metadata);
+  var command = alterTable(dialect, tableName, schema, metadata);
   return command.length === 0 ? Promise.resolve() : dialect.db.execute(command);
 }
 
 function getSchemaPropertyName(schema, columnName) {
-  let propertyName = columnName;
+  var propertyName = columnName;
   _.forEach(schema.properties, function(property, name) {
     if (property.field === columnName) {
       propertyName = name;
@@ -428,9 +426,9 @@ function getSchemaPropertyName(schema, columnName) {
 }
 
 function getPkConstraintInfo(constraint, order) {
-  let properties = [];
+  var properties = [];
   const re = /^pk__.*?__(.*)/;
-  let match = re.exec(constraint);
+  var match = re.exec(constraint);
   if (match) {
     properties = match[1].split('__');
   }
@@ -438,9 +436,9 @@ function getPkConstraintInfo(constraint, order) {
 }
 
 function getFkConstraintInfo(constraint) {
-  let constraintInfo = {};
+  var constraintInfo = {};
   const re = /^fk__.*?__(.*?)__(.*?)__(.*)/;
-  let match = re.exec(constraint);
+  var match = re.exec(constraint);
   if (match) {
     constraintInfo.column = match[1];
     constraintInfo.referenceTable = match[2];
@@ -451,7 +449,7 @@ function getFkConstraintInfo(constraint) {
 
 function getReferenceTableName($ref) {
   const re = /^\#\/definitions\/(.*)/;
-  let match = re.exec($ref);
+  var match = re.exec($ref);
   if (match) {
     return match[1];
   }
@@ -479,7 +477,7 @@ function canAlterColumn(from, to) {
 }
 
 function buildPkConstraintName(tableName, primaryKey) {
-  let constraintName = 'PK__' + tableName;
+  var constraintName = 'PK__' + tableName;
   primaryKey.forEach(function(column) {
     constraintName += '__' + column;
   });

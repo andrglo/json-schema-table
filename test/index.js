@@ -1,12 +1,10 @@
-'use strict';
-
 var pgp = require('pg-promise');
 var mssql = require('mssql');
 var spec = require('./spec');
 var gutil = require('gulp-util');
 var pretty = require('pretty-hrtime');
 
-const databaseName = 'json-schema-table';
+var databaseName = 'json-schema-table';
 
 var mssqlConfig = {
   user: process.env.MSSQL_USER,
@@ -24,13 +22,13 @@ var pgConfig = {
   port: process.env.POSTGRES_PORT || 5432,
   database: 'postgres',
   user: process.env.POSTGRES_USER || 'postgres',
-  password: process.env.POSTGRES_PASSWORD || 'postgres'
+  password: process.env.POSTGRES_PASSWORD
 };
 var pg = pgp();
 var pgDb = pg(pgConfig);
 
 function createPostgresDb() {
-  let dbName = process.env.POSTGRES_DATABASE || databaseName;
+  var dbName = process.env.POSTGRES_DATABASE || databaseName;
   return pgDb.none('DROP DATABASE IF EXISTS "' + dbName + '";')
     .then(function() {
       return pgDb.none('CREATE DATABASE "' + dbName + '"');
@@ -38,7 +36,7 @@ function createPostgresDb() {
 }
 
 function createMssqlDb() {
-  let dbName = process.env.MSSQL_DATABASE || databaseName;
+  var dbName = process.env.MSSQL_DATABASE || databaseName;
   return (new mssql.Request()).batch(
     'IF EXISTS(select * from sys.databases where name=\'' +
     dbName + '\') DROP DATABASE [' + dbName + '];' +
@@ -47,6 +45,17 @@ function createMssqlDb() {
 }
 
 before(function(done) {
+  if (process.env.CI) {
+    return createPostgresDb()
+      .then(function() {
+        pgConfig.database = process.env.POSTGRES_DATABASE || databaseName;
+        pgDb = pg(pgConfig);
+        done();
+      })
+      .catch(function(error) {
+        done(error);
+      });
+  }
   mssql.connect(mssqlConfig)
     .then(function() {
       return createMssqlDb()
@@ -84,6 +93,9 @@ describe('postgres', function() {
 });
 
 describe('mssql', function() {
+  if (process.env.CI) {
+    return;
+  }
   var duration;
   before(function() {
     duration = process.hrtime();
@@ -96,6 +108,8 @@ describe('mssql', function() {
 });
 
 after(function() {
-  mssql.close();
+  if (!process.env.CI) {
+    mssql.close();
+  }
   pg.end();
 });
