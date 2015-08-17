@@ -3,18 +3,20 @@
   "properties": {
     "person": {
       "type": "integer",
-      "$ref": "person",
-      "primaryKey": true
+      "$ref": "person"
     },
     "façade": {
       "type": "string",
       "maxLength": 20,
       "$ref": "façade",
-      "primaryKey": true,
       "field": "XfaçadeX"
     }
   },
   "required": [
+    "person",
+    "façade"
+  ],
+  "primaryKey": [
     "person",
     "façade"
   ]
