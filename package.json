@@ -43,7 +43,6 @@
   },
   "license": "MIT",
   "dependencies": {
-    "lodash": "^3.10.1",
-    "sql": "^0.58.0"
+    "lodash": "^3.10.1"
   }
 }
