@@ -1,0 +1,22 @@
+{
+  "type": "object",
+  "properties": {
+    "city": {
+      "type": "string",
+      "maxLength": 20
+    },
+    "state": {
+      "type": "string",
+      "maxLength": 20
+    },
+    "value": {
+      "type": "number",
+      "maxLength": 20,
+      "decimals": 2
+    }
+  },
+  "primaryKey": [
+    "city",
+    "state"
+  ]
+}

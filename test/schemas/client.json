@@ -15,6 +15,29 @@
       "type": "number",
       "maxLength": 20,
       "decimals": 6
+    },
+    "cityTax": {
+      "type": "object",
+      "schema": {
+        "$ref": "#/definitions/tax"
+      }
+    },
+    "stateTax": {
+      "schema": {
+        "$ref": "#/definitions/tax"
+      }
+    },
+    "tax": {
+      "$ref": "tax"
+    },
+    "taxes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "schema": {
+          "$ref": "#definitions/tax"
+        }
+      }
     }
   },
   "required": [
