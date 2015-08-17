@@ -40,21 +40,33 @@ function createMssqlDb() {
   return (new mssql.Request()).batch(
     'IF EXISTS(select * from sys.databases where name=\'' +
     dbName + '\') DROP DATABASE [' + dbName + '];' +
-    'CREATE DATABASE [' + dbName + '];' +
-    'USE [' + dbName + '];'
+    'CREATE DATABASE [' + dbName + '];'
+    //+
+    //'USE [' + dbName + '];'
   );
 }
 
 before(function(done) {
   mssql.connect(mssqlConfig)
     .then(function() {
-      return createMssqlDb();
+      return createMssqlDb()
+        .then(function() {
+          return mssql.close().then(function() {
+            mssqlConfig.database = process.env.MSSQL_DATABASE || databaseName;
+
+            return mssql.connect(mssqlConfig)
+          })
+        })
+        .catch(function(e){
+        console.log('aquii', e)
+        done(e)
+      })
     })
     .then(function() {
       return createPostgresDb();
     })
     .then(function() {
-      pgConfig.database = process.env.POSTGRES_DATABASE || 'json-schema-table';
+      pgConfig.database = process.env.POSTGRES_DATABASE || databaseName;
       pgDb = pg(pgConfig);
       done();
     })
@@ -63,17 +75,17 @@ before(function(done) {
     });
 });
 
-describe('postgres', function() {
-  var duration;
-  before(function() {
-    duration = process.hrtime();
-  });
-  spec(pgDb);
-  after(function() {
-    duration = process.hrtime(duration);
-    gutil.log('Postgres finished after', gutil.colors.magenta(pretty(duration)));
-  });
-});
+//describe('postgres', function() {
+//  var duration;
+//  before(function() {
+//    duration = process.hrtime();
+//  });
+//  spec(pgDb);
+//  after(function() {
+//    duration = process.hrtime(duration);
+//    gutil.log('Postgres finished after', gutil.colors.magenta(pretty(duration)));
+//  });
+//});
 
 describe('mssql', function() {
   var duration;

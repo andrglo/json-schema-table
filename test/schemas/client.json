@@ -3,7 +3,6 @@
   "properties": {
     "id": {
       "type": "integer",
-      "format": "list",
       "$ref": "person",
       "field": "clientId",
       "primaryKey": true

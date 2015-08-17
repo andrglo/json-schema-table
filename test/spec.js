@@ -4,10 +4,33 @@ import clientSchema from './schemas/client.json';
 import façadeSchema from './schemas/façade.json';
 import personFaçadeSchema from './schemas/personFaçade.json';
 import chai from 'chai';
+import _ from 'lodash';
 
 var expect = chai.expect;
-var should = chai.should();
-let log = console.log;
+chai.should();
+//let log = console.log;
+
+function checkColumns(columns, schema) {
+  expect(Object.keys(columns).length).to.equal(Object.keys(schema.properties).length);
+  _.forEach(schema.properties, function(property, name) {
+    let columnName = property.field || name;
+    columns.should.have.property(columnName);
+    if (property.type === 'number' && !property.decimals) {
+      expect(columns[columnName].type).to.equal('integer');
+      expect(columns[columnName].maxLength).to.equal(undefined);
+    } else if (property.type === 'date') {
+      expect(columns[columnName].type === 'date' ||
+        columns[columnName].type === 'datetime').to.equal(true);
+      expect(columns[columnName].maxLength).to.equal(undefined);
+    } else {
+      expect(columns[columnName].type).to.equal(property.type);
+      expect(columns[columnName].maxLength).to.equal(property.maxLength);
+    }
+    let required = property.required || property.primaryKey ||
+      (schema.required && schema.required.indexOf(name) !== -1);
+    expect(columns[columnName].required || false).to.equal(required);
+  });
+}
 
 export default function(db) {
 
@@ -16,7 +39,18 @@ export default function(db) {
       let person = jsonSchemaTable('person', personSchema, {db: db});
       person.sync()
         .then(function() {
-          done();
+          return person.metadata()
+            .then(function(metadata) {
+              metadata.should.not.have.property('foreignKeys');
+              metadata.should.have.property('primaryKey');
+              expect(metadata.primaryKey).to.be.a('array');
+              expect(metadata.primaryKey.length).to.equal(1);
+              expect(metadata.primaryKey[0]).to.equal('personId');
+              metadata.should.have.property('columns');
+              expect(metadata.columns).to.be.a('object');
+              checkColumns(metadata.columns, personSchema);
+              done();
+            });
         })
         .catch(function(error) {
           done(error);
@@ -26,7 +60,18 @@ export default function(db) {
       let client = jsonSchemaTable('client', clientSchema, {db: db});
       client.sync()
         .then(function() {
-          done();
+          return client.metadata()
+            .then(function(metadata) {
+              metadata.should.not.have.property('foreignKeys');
+              metadata.should.have.property('primaryKey');
+              expect(metadata.primaryKey).to.be.a('array');
+              expect(metadata.primaryKey.length).to.equal(1);
+              expect(metadata.primaryKey[0]).to.equal('clientId');
+              metadata.should.have.property('columns');
+              expect(metadata.columns).to.be.a('object');
+              checkColumns(metadata.columns, clientSchema);
+              done();
+            });
         })
         .catch(function(error) {
           done(error);
@@ -36,7 +81,18 @@ export default function(db) {
       let façade = jsonSchemaTable('façade', façadeSchema, {db: db});
       façade.sync()
         .then(function() {
-          done();
+          return façade.metadata()
+            .then(function(metadata) {
+              metadata.should.not.have.property('foreignKeys');
+              metadata.should.have.property('primaryKey');
+              expect(metadata.primaryKey).to.be.a('array');
+              expect(metadata.primaryKey.length).to.equal(1);
+              expect(metadata.primaryKey[0]).to.equal('Nome');
+              metadata.should.have.property('columns');
+              expect(metadata.columns).to.be.a('object');
+              checkColumns(metadata.columns, façadeSchema);
+              done();
+            });
         })
         .catch(function(error) {
           done(error);
@@ -46,7 +102,19 @@ export default function(db) {
       let personFaçade = jsonSchemaTable('personFaçade', personFaçadeSchema, {db: db});
       personFaçade.sync()
         .then(function() {
-          done();
+          return personFaçade.metadata()
+            .then(function(metadata) {
+              metadata.should.not.have.property('foreignKeys');
+              metadata.should.have.property('primaryKey');
+              expect(metadata.primaryKey).to.be.a('array');
+              expect(metadata.primaryKey.length).to.equal(2);
+              expect(metadata.primaryKey[0]).to.equal('person');
+              expect(metadata.primaryKey[1]).to.equal('XfaçadeX');
+              metadata.should.have.property('columns');
+              expect(metadata.columns).to.be.a('object');
+              checkColumns(metadata.columns, personFaçadeSchema);
+              done();
+            });
         })
         .catch(function(error) {
           done(error);
@@ -59,7 +127,11 @@ export default function(db) {
       let person = jsonSchemaTable('person', personSchema, {db: db});
       person.sync({references: true})
         .then(function() {
-          done();
+          return person.metadata()
+            .then(function(metadata) {
+              metadata.should.not.have.property('foreignKeys');
+              done();
+            });
         })
         .catch(function(error) {
           done(error);
@@ -74,10 +146,13 @@ export default function(db) {
               metadata.should.have.property('foreignKeys');
               expect(metadata.foreignKeys).to.be.a('array');
               expect(metadata.foreignKeys.length).to.equal(1);
-              metadata.foreignKeys[0].should.have.property('column');
-              expect(metadata.foreignKeys[0].column).to.equal('id');
-              metadata.foreignKeys[0].should.have.property('table');
-              expect(metadata.foreignKeys[0].table).to.equal('person');
+              let fk1 = metadata.foreignKeys[0];
+              expect(fk1).to.be.a('object');
+              fk1.should.have.property('references');
+              fk1.references.should.have.property('table');
+              expect(fk1.references.table).to.equal('person');
+              fk1.references.should.have.property('column');
+              expect(fk1.references.column).to.equal('personId');
               done();
             });
         })
@@ -92,10 +167,6 @@ export default function(db) {
           return façade.metadata()
             .then(function(metadata) {
               metadata.should.not.have.property('foreignKeys');
-              metadata.should.have.property('primaryKeys');
-              expect(metadata.primaryKeys).to.be.a('array');
-              expect(metadata.primaryKeys.length).to.equal(1);
-              expect(metadata.primaryKeys[0]).to.equal('id');
               done();
             });
         })
@@ -109,17 +180,27 @@ export default function(db) {
         .then(function() {
           return personFaçade.metadata()
             .then(function(metadata) {
-              log(metadata)
               metadata.should.have.property('foreignKeys');
-              metadata.should.have.property('primaryKeys');
-              expect(metadata.primaryKeys).to.be.a('array');
-              expect(metadata.primaryKeys.length).to.equal(1);
-              expect(metadata.primaryKeys[0]).to.equal('id');
+              expect(metadata.foreignKeys).to.be.a('array');
+              expect(metadata.foreignKeys.length).to.equal(2);
+              let fk1 = _.find(metadata.foreignKeys, 'column', 'XfaçadeX');
+              expect(fk1).to.be.a('object');
+              fk1.should.have.property('references');
+              fk1.references.should.have.property('table');
+              expect(fk1.references.table).to.equal('façade');
+              fk1.references.should.have.property('column');
+              expect(fk1.references.column).to.equal('Nome');
+              let fk2 = _.find(metadata.foreignKeys, 'column', 'person');
+              expect(fk2).to.be.a('object');
+              fk2.should.have.property('references');
+              fk2.references.should.have.property('table');
+              expect(fk2.references.table).to.equal('person');
+              fk2.references.should.have.property('column');
+              expect(fk2.references.column).to.equal('personId');
               done();
             });
         })
         .catch(function(error) {
-          //log(error)
           done(error);
         });
     });

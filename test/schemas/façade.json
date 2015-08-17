@@ -4,8 +4,6 @@
   "description": "Classes de pessoas no cadastro",
   "properties": {
     "id": {
-      "title": "Nome",
-      "description": "Nome",
       "type": "string",
       "maxLength": 20,
       "required": true,

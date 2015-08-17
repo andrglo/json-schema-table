@@ -10,7 +10,8 @@
       "type": "string",
       "maxLength": 20,
       "$ref": "façade",
-      "primaryKey": true
+      "primaryKey": true,
+      "field": "XfaçadeX"
     }
   },
   "required": [
