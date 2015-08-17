@@ -1,5 +1,5 @@
 # json-schema-table [![NPM version][npm-image]][npm-url] [![Build Status][travis-image]][travis-url] [![Dependency Status][daviddm-image]][daviddm-url] [![Coverage percentage][coveralls-image]][coveralls-url]
-> SQL query builder for maintenance and queries based on json schema
+> Creates and maintains a SQL table structure
 
  *** In development ***
 

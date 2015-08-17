@@ -1,8 +1,10 @@
-import pgp from 'pg-promise';
-import mssql from 'mssql';
-import spec from './spec';
-import gutil from 'gulp-util';
-import pretty from 'pretty-hrtime';
+'use strict';
+
+var pgp = require('pg-promise');
+var mssql = require('mssql');
+var spec = require('./spec');
+var gutil = require('gulp-util');
+var pretty = require('pretty-hrtime');
 
 const databaseName = 'json-schema-table';
 

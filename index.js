@@ -1,10 +1,12 @@
-import _ from 'lodash';
-import assert from 'assert';
+'use strict';
 
-export default jsonSchemaTable;
+var _ = require('lodash');
+var assert = require('assert');
 
-let log = console.log;
-//let log = function() {};
+module.exports = jsonSchemaTable;
+
+var log = console.log;
+//var log = function() {};
 
 function jsonSchemaTable(tableName, schema, config) {
   config = config || {};
