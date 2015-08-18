@@ -25,6 +25,10 @@ function jsonSchemaTable(tableName, schema, config) {
       return Promise.resolve()
         .then(function() {
           return dialect.db.execute(createTable(dialect, tableName, schema));
+        })
+        .catch(function(error) {
+          wrapError(error, tableName);
+          throw error;
         });
     },
     sync: function() {
@@ -37,6 +41,10 @@ function jsonSchemaTable(tableName, schema, config) {
             .then(function() {
               return createTableReferences(dialect, tableName, schema, metadata);
             });
+        })
+        .catch(function(error) {
+          wrapError(error, tableName);
+          throw error;
         });
     },
     metadata: function() {
@@ -62,6 +70,10 @@ function jsonSchemaTable(tableName, schema, config) {
             });
           }
           return tableMetadata;
+        })
+        .catch(function(error) {
+          wrapError(error, tableName);
+          throw error;
         });
     }
   };
@@ -251,6 +263,9 @@ function propertyToMssql(property, name, schema) {
     case 'text':
       column = 'NVARCHAR(MAX)';
       break;
+    case 'blob':
+      column = 'VARBINARY(MAX)';
+      break;
     case 'string':
       column = 'NVARCHAR(' + (property.maxLength ? property.maxLength : 'MAX') + ')';
       break;
@@ -296,6 +311,9 @@ function mssqlToProperty(metadata, name) {
         property.maxLength = metadata.character_maximum_length;
       }
       break;
+    case 'varbinary':
+      property.type = 'blob';
+      break;
     case 'datetime':
     case 'datetime2':
       property.type = 'datetime';
@@ -326,6 +344,9 @@ function propertyToPostgres(property, name, schema, isAlter) {
       break;
     case 'text':
       column = 'TEXT';
+      break;
+    case 'blob':
+      column = 'BYTEA';
       break;
     case 'string':
       if (property.maxLength) {
@@ -397,6 +418,9 @@ function postgresToProperty(metadata, name) {
     case 'character varying':
       property.type = 'string';
       property.maxLength = metadata.character_maximum_length;
+      break;
+    case 'bytea':
+      property.type = 'blob';
       break;
     case 'numeric':
       property.type = 'number';
@@ -538,4 +562,8 @@ function isNodeMssql(db) {
 
 function isPostgres(db) {
   return db.oneOrNone !== void 0; //todo identify in a better way
+}
+
+function wrapError(error, tableName) {
+  error.message = error.message + ' (' + tableName + ')';
 }

@@ -9,6 +9,9 @@
       "required": true,
       "field": "Nome",
       "primaryKey": true
+    },
+    "image": {
+      "type": "blob"
     }
   }
 }

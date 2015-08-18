@@ -1,6 +1,6 @@
 {
   "name": "json-schema-table",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "description": "Creates and maintains a SQL table structure",
   "homepage": "",
   "repository": "https://github.com/andrglo/json-schema-table.git",
