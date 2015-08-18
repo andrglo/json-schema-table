@@ -9,7 +9,8 @@
     },
     "name": {
       "type": "string",
-      "maxLength": 60
+      "maxLength": 60,
+      "field": "fieldName"
     },
     "number": {
       "type": "number",
@@ -32,5 +33,9 @@
   },
   "required": [
     "name"
+  ],
+  "unique": [
+    ["name"],
+    ["state", "dateOfBirth"]
   ]
 }

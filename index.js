@@ -57,6 +57,15 @@ function jsonSchemaTable(tableName, schema, config) {
               return column.column;
             });
           }
+          var uniqueKeys = metadata.tablesWithUniqueKeys[tableName];
+          if (uniqueKeys) {
+            tableMetadata.uniqueKeys = [];
+            _.forEach(uniqueKeys, function(uniqueKey) {
+              tableMetadata.uniqueKeys.push(uniqueKey.map(function(column) {
+                return column.column;
+              }));
+            });
+          }
           var foreignKeys = metadata.tablesWithForeignKeys[tableName];
           if (foreignKeys) {
             tableMetadata.foreignKeys = foreignKeys.map(function(foreignKey) {
@@ -83,6 +92,7 @@ function getDbMetadata(dialect, tableName, schema) {
   var dbToProperty = dialect.name === 'mssql' ? mssqlToProperty : postgresToProperty;
   var metadata = {
     tablesWithPrimaryKey: {},
+    tablesWithUniqueKeys: {},
     tablesWithForeignKeys: {},
     columns: {}
   };
@@ -114,6 +124,17 @@ function getDbMetadata(dialect, tableName, schema) {
             referenceColumn: constraintInfo.referenceColumn,
             referenceTable: constraintInfo.referenceTable
           });
+        } else if (record.constraint_name.substr(0, 4) === 'uq__') {
+          var info = getUqConstraintInfo(record.constraint_name, record.ordinal_position);
+          metadata.tablesWithUniqueKeys[record.table_name] =
+            metadata.tablesWithUniqueKeys[record.table_name] || {};
+          metadata.tablesWithUniqueKeys[record.table_name][info.key] =
+            metadata.tablesWithUniqueKeys[record.table_name][info.key] || [];
+          metadata.tablesWithUniqueKeys[record.table_name][info.key].push({
+            name: info.name,
+            column: record.column_name,
+            property: dbToProperty(record, name)
+          });
         }
       });
       return dialect.db.query('SELECT COLUMN_NAME as column_name,IS_NULLABLE as is_nullable,' +
@@ -136,6 +157,7 @@ function createTable(dialect, tableName, schema) {
 
   var columns = [];
   var primaryKey = [];
+  var unique = [];
   var delimiters = dialect.delimiters;
   _.forEach(schema.properties, function(property, name) {
     var fieldName = property.field || name;
@@ -148,12 +170,31 @@ function createTable(dialect, tableName, schema) {
       (schema.primaryKey && schema.primaryKey.indexOf(name) !== -1)) {
       primaryKey.push(fieldName);
     }
+    if (property.unique === true) {
+      unique.push([fieldName]);
+    }
   });
   if (primaryKey.length) {
     columns.push('CONSTRAINT ' + wrap(buildPkConstraintName(tableName, primaryKey), delimiters) +
       ' PRIMARY KEY (' + primaryKey.map(function(column) {
         return wrap(column, delimiters);
       }).join(',') + ')');
+  }
+
+  if (schema.unique) {
+    schema.unique.map(function(group) {
+      unique.push(group.map(function(name) {
+        return schema.properties[name].field || name;
+      }));
+    });
+  }
+  if (unique.length) {
+    unique.map(function(group) {
+      columns.push('CONSTRAINT ' + wrap(buildUniqueConstraintName(tableName, group), delimiters) +
+        ' UNIQUE (' + group.map(function(column) {
+          return wrap(column, delimiters);
+        }).join(',') + ')');
+    });
   }
 
   return dialect.name === 'mssql' ?
@@ -214,6 +255,7 @@ function alterTable(dialect, tableName, schema, metadata) {
         }).join(',') + ')');
     }
   }
+  //todo Modify unique constraints
   return commands.join(';');
 
 }
@@ -227,22 +269,44 @@ function createTableReferences(dialect, tableName, schema, metadata) {
     if ($ref) {
       var foreignKey = property.field || name;
       var referenceTableName = getReferenceTableName($ref);
-      if (metadata.tablesWithPrimaryKey[referenceTableName] && !(metadata.tablesWithForeignKeys[tableName] &&
+      if ((metadata.tablesWithPrimaryKey[referenceTableName] ||
+        metadata.tablesWithUniqueKeys[referenceTableName]) && !(metadata.tablesWithForeignKeys[tableName] &&
         _.find(metadata.tablesWithForeignKeys[tableName], 'column', foreignKey))) {
-        assert(metadata.tablesWithPrimaryKey[referenceTableName].length === 1,
-          'Table ' + referenceTableName +
-          ' should have a primary key with only one field to be referenced');
-        var referenceTablePrimaryKey = metadata.tablesWithPrimaryKey[referenceTableName][0];
+        var referenceTableKey = metadata.tablesWithPrimaryKey[referenceTableName][0];
+        if (property.schema && property.schema.key && property.schema.key !== referenceTableKey.name) {
+          var found;
+          _.forEach(metadata.tablesWithUniqueKeys[referenceTableName], function(uniqueKey) {
+            if (uniqueKey.length === 1 && uniqueKey[0].name === property.schema.key) {
+              found = uniqueKey[0];
+              return false;
+            }
+          });
+          if (!found) { // try the field name
+            _.forEach(metadata.tablesWithUniqueKeys[referenceTableName], function(uniqueKey) {
+              if (uniqueKey.length === 1 && uniqueKey[0].column === property.schema.key) {
+                found = uniqueKey[0];
+                return false;
+              }
+            });
+          }
+          assert(found, 'Table ' + referenceTableName +
+            ' should have a unique key with only one field to be referenced');
+          referenceTableKey = found;
+        } else {
+          assert(metadata.tablesWithPrimaryKey[referenceTableName].length === 1,
+            'Table ' + referenceTableName +
+            ' should have a primary key with only one field to be referenced');
+        }
         var constraintName = 'FK__' + tableName + '__' + foreignKey + '__' +
-          referenceTableName + '__' + referenceTablePrimaryKey.column;
+          referenceTableName + '__' + referenceTableKey.column;
         var cmd = 'ALTER TABLE ' + wrap(tableName, delimiters) +
           ' ADD CONSTRAINT ' + wrap(constraintName, delimiters) + ' FOREIGN KEY (' +
           wrap(foreignKey, delimiters) + ') REFERENCES ' + wrap(referenceTableName, delimiters) +
-          '(' + wrap(referenceTablePrimaryKey.column, delimiters) + ')';
+          '(' + wrap(referenceTableKey.column, delimiters) + ')';
         if (!metadata.columns[foreignKey]) {
           cmd = 'ALTER TABLE ' + wrap(tableName, delimiters) + ' ADD ' +
             wrap(foreignKey, delimiters) + ' ' +
-            dialect.propertyToDb(referenceTablePrimaryKey.property, foreignKey) + ';' + cmd;
+            dialect.propertyToDb(referenceTableKey.property, foreignKey) + ';' + cmd;
         }
         commands.push(cmd);
       }
@@ -291,6 +355,8 @@ function propertyToMssql(property, name, schema) {
   column += ' ' +
     (property.required === true ||
     property.primaryKey === true ||
+    property.unique === true ||
+    (schema && schema.unique && isInUniqueProperty(name, schema.unique)) ||
     (schema && schema.primaryKey && schema.primaryKey.indexOf(name) !== -1) ||
     (schema && schema.required && schema.required.indexOf(name) !== -1) ?
       'NOT NULL' : 'NULL');
@@ -391,6 +457,8 @@ function propertyToPostgres(property, name, schema, isAlter) {
     column += ' ' +
       (property.required === true ||
       property.primaryKey === true ||
+      property.unique === true ||
+      (schema && schema.unique && isInUniqueProperty(name, schema.unique)) ||
       (schema && schema.primaryKey && schema.primaryKey.indexOf(name) !== -1) ||
       (schema && schema.required && schema.required.indexOf(name) !== -1) ?
         'NOT NULL' : 'NULL');
@@ -466,6 +534,19 @@ function getPkConstraintInfo(constraint, order) {
   return properties[order - 1];
 }
 
+function getUqConstraintInfo(constraint, order) {
+  var properties = [];
+  const re = /^uq__.*?__(.*)/;
+  var match = re.exec(constraint);
+  if (match) {
+    properties = match[1].split('__');
+  }
+  return {
+    name: properties[order - 1],
+    key: match[1]
+  };
+}
+
 function getFkConstraintInfo(constraint) {
   var constraintInfo = {};
   const re = /^fk__.*?__(.*?)__(.*?)__(.*)/;
@@ -515,6 +596,24 @@ function buildPkConstraintName(tableName, primaryKey) {
     constraintName += '__' + column;
   });
   return constraintName;
+}
+
+function buildUniqueConstraintName(tableName, unique) {
+  var constraintName = 'UQ__' + tableName;
+  unique.forEach(function(column) {
+    constraintName += '__' + column;
+  });
+  return constraintName;
+}
+
+function isInUniqueProperty(column, unique) {
+  for (var i = 0; i < unique.length; i++) {
+    var columns = unique[i];
+    if (columns.indexOf(column) !== -1) {
+      return true;
+    }
+  }
+  return false;
 }
 
 function wrap(name, delimiters) {

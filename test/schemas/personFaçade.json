@@ -2,8 +2,12 @@
   "type": "object",
   "properties": {
     "person": {
-      "type": "integer",
-      "$ref": "person"
+      "type": "string",
+      "maxLength": 60,
+      "schema": {
+        "$ref": "person",
+        "key": "fieldName"
+      }
     },
     "façade": {
       "type": "string",

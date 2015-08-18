@@ -1,7 +1,5 @@
 {
   "type": "object",
-  "title": "Classe",
-  "description": "Classes de pessoas no cadastro",
   "properties": {
     "id": {
       "type": "string",

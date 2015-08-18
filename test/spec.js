@@ -37,12 +37,23 @@ function checkColumns(columns, schema) {
       expect(columns[columnName].type).to.equal(property.type, 'Column ' + columnName);
       expect(columns[columnName].maxLength).to.equal(property.maxLength, 'Column ' + columnName);
     }
-    var required = property.required || property.primaryKey ||
+    var required = property.required || property.primaryKey || property.unique ||
       (schema.primaryKey && schema.primaryKey.indexOf(name) !== -1) ||
       (schema.required && schema.required.indexOf(name) !== -1) ||
+      (schema.unique && isInUniqueProperty(name, schema.unique)) ||
       false;
     expect(columns[columnName].required || false).to.equal(required, 'Column ' + columnName);
   });
+}
+
+function isInUniqueProperty(column, unique) {
+  for (var i = 0; i < unique.length; i++) {
+    var columns = unique[i];
+    if (columns.indexOf(column) !== -1) {
+      return true;
+    }
+  }
+  return false;
 }
 
 function checkForeignKey(fks, fk, table, column) {
@@ -299,11 +310,12 @@ module.exports = function(db) {
               expect(metadata.foreignKeys).to.be.a('array');
               expect(metadata.foreignKeys.length).to.equal(2);
               checkForeignKey(metadata.foreignKeys, 'XfaçadeX', 'façade', 'Nome');
-              checkForeignKey(metadata.foreignKeys, 'person', 'person', 'personId');
+              checkForeignKey(metadata.foreignKeys, 'person', 'person', 'fieldName');
               done();
             });
         })
         .catch(function(error) {
+          log(error)
           done(error);
         });
     });
