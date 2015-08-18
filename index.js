@@ -137,11 +137,12 @@ function createTable(dialect, tableName, schema) {
       primaryKey.push(fieldName);
     }
   });
-  assert(primaryKey.length, 'Table ' + tableName + ' has no primary keys');
-  columns.push('CONSTRAINT ' + wrap(buildPkConstraintName(tableName, primaryKey), delimiters) +
-    ' PRIMARY KEY (' + primaryKey.map(function(column) {
-      return wrap(column, delimiters);
-    }).join(',') + ')');
+  if (primaryKey.length) {
+    columns.push('CONSTRAINT ' + wrap(buildPkConstraintName(tableName, primaryKey), delimiters) +
+      ' PRIMARY KEY (' + primaryKey.map(function(column) {
+        return wrap(column, delimiters);
+      }).join(',') + ')');
+  }
 
   return dialect.name === 'mssql' ?
   'IF (NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE ' +
@@ -185,18 +186,21 @@ function alterTable(dialect, tableName, schema, metadata) {
       }
     }
   });
-  assert(primaryKey.length, 'Table ' + tableName + ' has no primary keys');
   var oldPrimaryKey = metadata.tablesWithPrimaryKey[tableName].map(function(column) {
     return column.column;
   });
   if (_.difference(primaryKey, oldPrimaryKey).length) {
-    commands.push('ALTER TABLE ' + wrap(tableName, delimiters) + ' DROP CONSTRAINT '
-      + wrap(buildPkConstraintName(tableName, oldPrimaryKey), delimiters));
-    commands.push('ALTER TABLE ' + wrap(tableName, delimiters) + ' ADD CONSTRAINT '
-      + wrap(buildPkConstraintName(tableName, primaryKey), delimiters) + ' PRIMARY KEY (' +
-      primaryKey.map(function(column) {
-        return wrap(column, delimiters);
-      }).join(',') + ')');
+    if (oldPrimaryKey.length) {
+      commands.push('ALTER TABLE ' + wrap(tableName, delimiters) + ' DROP CONSTRAINT '
+        + wrap(buildPkConstraintName(tableName, oldPrimaryKey), delimiters));
+    }
+    if (primaryKey.length) {
+      commands.push('ALTER TABLE ' + wrap(tableName, delimiters) + ' ADD CONSTRAINT '
+        + wrap(buildPkConstraintName(tableName, primaryKey), delimiters) + ' PRIMARY KEY (' +
+        primaryKey.map(function(column) {
+          return wrap(column, delimiters);
+        }).join(',') + ')');
+    }
   }
   return commands.join(';');
 
