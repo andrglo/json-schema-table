@@ -184,10 +184,21 @@ function createTable(dialect, tableName, schema) {
   if (schema.unique) {
     schema.unique.map(function(group) {
       unique.push(group.map(function(name) {
-        return schema.properties[name].field || name;
+        var column = schema.properties[name];
+        if (!column) {
+          _.forEach(schema.properties, function(property) {
+            if (property.field === name) {
+              column = property;
+              return false;
+            }
+          });
+        }
+        assert(column, 'Column ' + name + ' not found for unique key ' + group)
+        return column.field || name;
       }));
     });
   }
+  // todo handle when decimals = 0
   if (unique.length) {
     unique.map(function(group) {
       columns.push('CONSTRAINT ' + wrap(buildUniqueConstraintName(tableName, group), delimiters) +
@@ -239,9 +250,10 @@ function alterTable(dialect, tableName, schema, metadata) {
       }
     }
   });
-  var oldPrimaryKey = metadata.tablesWithPrimaryKey[tableName].map(function(column) {
-    return column.column;
-  });
+  var oldPrimaryKey = metadata.tablesWithPrimaryKey[tableName] ?
+    metadata.tablesWithPrimaryKey[tableName].map(function(column) {
+      return column.column;
+    }) : [];
   if (_.difference(primaryKey, oldPrimaryKey).length) {
     if (oldPrimaryKey.length) {
       commands.push('ALTER TABLE ' + wrap(tableName, delimiters) + ' DROP CONSTRAINT '
@@ -273,7 +285,9 @@ function createTableReferences(dialect, tableName, schema, metadata) {
         metadata.tablesWithUniqueKeys[referenceTableName]) && !(metadata.tablesWithForeignKeys[tableName] &&
         _.find(metadata.tablesWithForeignKeys[tableName], 'column', foreignKey))) {
         var referenceTableKey = metadata.tablesWithPrimaryKey[referenceTableName][0];
-        if (property.schema && property.schema.key && property.schema.key !== referenceTableKey.name) {
+        if (property.schema && property.schema.key &&
+          property.schema.key !== referenceTableKey.name &&
+          property.schema.key !== referenceTableKey.column) {
           var found;
           _.forEach(metadata.tablesWithUniqueKeys[referenceTableName], function(uniqueKey) {
             if (uniqueKey.length === 1 && uniqueKey[0].name === property.schema.key) {
