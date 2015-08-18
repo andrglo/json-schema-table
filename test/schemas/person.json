@@ -15,6 +15,9 @@
       "type": "number",
       "maxLength": 6
     },
+    "summary": {
+      "type": "string"
+    },
     "description": {
       "type": "text"
     },

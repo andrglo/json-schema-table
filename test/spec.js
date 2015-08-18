@@ -9,6 +9,7 @@ var personFaçadeSchema = require('./schemas/personFaçade.json');
 var taxSchema = require('./schemas/tax.json');
 
 var modifiedClientSchema;
+var modifiedPersonSchema;
 var modifiedTaxSchema;
 
 var expect = chai.expect;
@@ -26,6 +27,9 @@ function checkColumns(columns, schema) {
     } else if (property.type === 'date') {
       expect(columns[columnName].type === 'date' ||
         columns[columnName].type === 'datetime').to.equal(true);
+      expect(columns[columnName].maxLength).to.equal(undefined);
+    } else if (property.type === 'string' && property.maxLength === void 0) {
+      expect(columns[columnName].type === 'text').to.equal(true);
       expect(columns[columnName].maxLength).to.equal(undefined);
     } else if (property.type === 'object' || property.type === void 0) {
       //should be the type of the primary key of the referenced table
@@ -306,7 +310,7 @@ module.exports = function(db) {
 
     describe('modify structure', function() {
       it('should not alter person column dateOfBirth', function(done) {
-        var modifiedPersonSchema = _.cloneDeep(personSchema);
+        modifiedPersonSchema = _.cloneDeep(personSchema);
         modifiedPersonSchema.properties.dateOfBirth.type = 'string';
         var person = jsonSchemaTable('person', modifiedPersonSchema, {db: db});
         person.sync()
@@ -415,8 +419,27 @@ module.exports = function(db) {
             done(error);
           });
       });
+      it('should alter person column name to text', function(done) {
+        modifiedPersonSchema.properties.dateOfBirth.type = 'date';
+        modifiedPersonSchema.properties.name.type = 'text';
+        delete modifiedPersonSchema.properties.name.type;
+        var person = jsonSchemaTable('person', modifiedPersonSchema, {db: db});
+        person.sync()
+          .then(function() {
+            return person.metadata()
+              .then(function(metadata) {
+                metadata.should.have.property('columns');
+                expect(metadata.columns).to.be.a('object');
+                checkColumns(metadata.columns, modifiedPersonSchema);
+                done();
+              });
+          })
+          .catch(function(error) {
+            done(error);
+          });
+      });
     });
 
   });
 
-}
+};

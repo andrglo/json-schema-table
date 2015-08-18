@@ -245,6 +245,8 @@ function propertyToMssql(property, name, schema) {
       }
       break;
     case 'text':
+      column = 'NVARCHAR(MAX)';
+      break;
     case 'string':
       column = 'NVARCHAR(' + (property.maxLength ? property.maxLength : 'MAX') + ')';
       break;
@@ -319,6 +321,8 @@ function propertyToPostgres(property, name, schema, isAlter) {
       }
       break;
     case 'text':
+      column = 'TEXT';
+      break;
     case 'string':
       if (property.maxLength) {
         column = 'VARCHAR(' + property.maxLength + ')';
@@ -462,17 +466,19 @@ function equalDefinitions(was, is) {
     (was.type === 'integer' &&
     is.type === 'number' &&
     is.decimals === void 0) ||
-    (was.type === 'datetime' && is.type === 'date');
+    (was.type === 'datetime' && is.type === 'date') ||
+    (was.type === 'text' && (is.type === 'string' && is.maxLength === void 0));
 }
 
 function canAlterColumn(from, to) {
-  return from.type === to.type &&
+  return (from.type === to.type &&
     (from.type === 'string' &&
     from.maxLength < to.maxLength) ||
     (from.type === 'number' &&
     from.maxLength < to.maxLength &&
     from.decimals <= to.decimals &&
-    to.maxLength - from.maxLength >= to.decimals - from.decimals);
+    to.maxLength - from.maxLength >= to.decimals - from.decimals)) ||
+    (from.type === 'string' && to.type === 'text');
 }
 
 function buildPkConstraintName(tableName, primaryKey) {
