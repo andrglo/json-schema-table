@@ -204,7 +204,6 @@ function alterTable(dialect, tableName, schema, metadata) {
 
 function createTableReferences(dialect, tableName, schema, metadata) {
 
-
   var commands = [];
   var delimiters = dialect.delimiters;
   _.forEach(schema.properties, function(property, name) {
@@ -233,7 +232,7 @@ function createTableReferences(dialect, tableName, schema, metadata) {
       }
     }
   });
-  return commands.length ? dialect.db.execute(commands.join(';')) : void 0;
+  return commands.length ? dialect.db.execute(commands.join(';')) : Promise.resolve();
 }
 
 function propertyToMssql(property, name, schema) {
