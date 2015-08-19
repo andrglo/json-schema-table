@@ -588,7 +588,7 @@ function equalDefinitions(was, is) {
     was.decimals === is.decimals) ||
     (was.type === 'integer' &&
     is.type === 'number' &&
-    is.decimals === void 0) ||
+    (is.decimals === void 0 || is.decimals === 0)) ||
     (was.type === 'datetime' && is.type === 'date') ||
     (was.type === 'text' && (is.type === 'string' && is.maxLength === void 0));
 }

@@ -16,6 +16,11 @@
       "maxLength": 20,
       "decimals": 6
     },
+    "debt": {
+      "type": "number",
+      "maxLength": 20,
+      "decimals": 0
+    },
     "cityTax": {
       "type": "object",
       "schema": {

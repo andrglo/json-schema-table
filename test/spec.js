@@ -135,7 +135,7 @@ module.exports = function(db) {
               expect(metadata.columns).to.be.a('object');
               var createdSchema = _.extend({}, modifiedClientSchema);
               createdSchema.properties = _.pick(modifiedClientSchema.properties, [
-                'id', 'initials', 'sales'
+                'id', 'initials', 'sales', 'debt'
               ]);
               checkColumns(metadata.columns, createdSchema);
               done();
