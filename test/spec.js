@@ -1,6 +1,7 @@
-var jsonSchemaTable = require('..');
+var jsonSchemaTable = require('../src');
 var chai = require('chai');
 var _ = require('lodash');
+var utils = require('../src/utils');
 
 var personSchema = require('./schemas/person.json');
 var clientSchema = require('./schemas/client.json');
@@ -37,23 +38,12 @@ function checkColumns(columns, schema) {
       expect(columns[columnName].type).to.equal(property.type, 'Column ' + columnName);
       expect(columns[columnName].maxLength).to.equal(property.maxLength, 'Column ' + columnName);
     }
-    var required = property.required || property.primaryKey || property.unique ||
-      (schema.primaryKey && schema.primaryKey.indexOf(name) !== -1) ||
-      (schema.required && schema.required.indexOf(name) !== -1) ||
-      (schema.unique && isInUniqueProperty(name, schema.unique)) ||
+    var required = property.required || property.primaryKey ||
+      (utils.isInArray(name, schema.primaryKey, schema)) ||
+      (utils.isInArray(name, schema.required, schema)) ||
       false;
     expect(columns[columnName].required || false).to.equal(required, 'Column ' + columnName);
   });
-}
-
-function isInUniqueProperty(column, unique) {
-  for (var i = 0; i < unique.length; i++) {
-    var columns = unique[i];
-    if (columns.indexOf(column) !== -1) {
-      return true;
-    }
-  }
-  return false;
 }
 
 function checkForeignKey(fks, fk, table, column) {
@@ -315,7 +305,6 @@ module.exports = function(db) {
             });
         })
         .catch(function(error) {
-          log(error)
           done(error);
         });
     });

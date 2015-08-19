@@ -7,7 +7,7 @@ var nsp = require('gulp-nsp');
 var coveralls = require('gulp-coveralls');
 
 gulp.task('static', function() {
-  return gulp.src('index.js')
+  return gulp.src('src/**/*.js')
     .pipe(eslint())
     .pipe(eslint.format())
     .pipe(eslint.failAfterError());
@@ -18,7 +18,7 @@ gulp.task('nsp', function(cb) {
 });
 
 gulp.task('pre-test', function() {
-  return gulp.src('index.js')
+  return gulp.src('src/**/*.js')
     .pipe(istanbul({includeUntested: true}))
     .pipe(istanbul.hookRequire());
 });

@@ -1,6 +1,8 @@
 var _ = require('lodash');
 var assert = require('assert');
 
+var utils = require('./utils');
+
 module.exports = jsonSchemaTable;
 
 var log = console.log;
@@ -133,7 +135,7 @@ function getDbMetadata(dialect, tableName, schema) {
           metadata.tablesWithUniqueKeys[record.table_name][info.key].push({
             name: info.name,
             column: record.column_name,
-            property: dbToProperty(record, name)
+            property: dbToProperty(record, info.name)
           });
         }
       });
@@ -184,21 +186,10 @@ function createTable(dialect, tableName, schema) {
   if (schema.unique) {
     schema.unique.map(function(group) {
       unique.push(group.map(function(name) {
-        var column = schema.properties[name];
-        if (!column) {
-          _.forEach(schema.properties, function(property) {
-            if (property.field === name) {
-              column = property;
-              return false;
-            }
-          });
-        }
-        assert(column, 'Column ' + name + ' not found for unique key ' + group)
-        return column.field || name;
+        return utils.findProperty(name, schema.properties).field || name;
       }));
     });
   }
-  // todo handle when decimals = 0
   if (unique.length) {
     unique.map(function(group) {
       columns.push('CONSTRAINT ' + wrap(buildUniqueConstraintName(tableName, group), delimiters) +
@@ -268,6 +259,7 @@ function alterTable(dialect, tableName, schema, metadata) {
     }
   }
   //todo Modify unique constraints
+  //todo Implement multiple column reference
   return commands.join(';');
 
 }
@@ -369,10 +361,8 @@ function propertyToMssql(property, name, schema) {
   column += ' ' +
     (property.required === true ||
     property.primaryKey === true ||
-    property.unique === true ||
-    (schema && schema.unique && isInUniqueProperty(name, schema.unique)) ||
-    (schema && schema.primaryKey && schema.primaryKey.indexOf(name) !== -1) ||
-    (schema && schema.required && schema.required.indexOf(name) !== -1) ?
+    (schema && utils.isInArray(name, schema.primaryKey, schema)) ||
+    (schema && utils.isInArray(name, schema.required, schema)) ?
       'NOT NULL' : 'NULL');
   return column;
 }
@@ -471,10 +461,8 @@ function propertyToPostgres(property, name, schema, isAlter) {
     column += ' ' +
       (property.required === true ||
       property.primaryKey === true ||
-      property.unique === true ||
-      (schema && schema.unique && isInUniqueProperty(name, schema.unique)) ||
-      (schema && schema.primaryKey && schema.primaryKey.indexOf(name) !== -1) ||
-      (schema && schema.required && schema.required.indexOf(name) !== -1) ?
+      (schema && utils.isInArray(name, schema.primaryKey, schema)) ||
+      (schema && utils.isInArray(name, schema.required, schema)) ?
         'NOT NULL' : 'NULL');
   }
   return column;
@@ -483,8 +471,8 @@ function propertyToPostgres(property, name, schema, isAlter) {
 function postgresSetNull(property, name, schema) {
   return (property.required === true ||
   property.primaryKey === true ||
-  (schema && schema.primaryKey && schema.primaryKey.indexOf(name) !== -1) ||
-  (schema && schema.required && schema.required.indexOf(name) !== -1) ?
+  (schema && utils.isInArray(name, schema.primaryKey, schema)) ||
+  (schema && utils.isInArray(name, schema.required, schema)) ?
     'SET NOT NULL' : 'DROP NOT NULL');
 }
 
@@ -618,16 +606,6 @@ function buildUniqueConstraintName(tableName, unique) {
     constraintName += '__' + column;
   });
   return constraintName;
-}
-
-function isInUniqueProperty(column, unique) {
-  for (var i = 0; i < unique.length; i++) {
-    var columns = unique[i];
-    if (columns.indexOf(column) !== -1) {
-      return true;
-    }
-  }
-  return false;
 }
 
 function wrap(name, delimiters) {

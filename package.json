@@ -1,6 +1,6 @@
 {
   "name": "json-schema-table",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "description": "Creates and maintains a SQL table structure",
   "homepage": "",
   "repository": "https://github.com/andrglo/json-schema-table.git",
@@ -9,6 +9,10 @@
     "email": "andredagloria@gmail.com",
     "url": "andrglo.com"
   },
+  "files": [
+    "src"
+  ],
+  "main": "src/index.js",
   "keywords": [
     "json",
     "schema",
