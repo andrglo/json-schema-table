@@ -29,6 +29,9 @@
     },
     "dateOfBirth": {
       "type": "date"
+    },
+    "momentOfBirth": {
+      "type": "datetime"
     }
   },
   "required": [

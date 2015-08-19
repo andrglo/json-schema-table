@@ -430,13 +430,13 @@ function propertyToPostgres(property, name, schema, isAlter) {
       break;
     case 'time':
       column = 'TIME';
-      if (!(property.timezone === 'UTC' || property.timezone === 'ignore')) {
+      if (property.timezone !== 'ignore') {
         column += ' WITH TIME ZONE';
       }
       break;
     case 'datetime':
       column = 'TIMESTAMP';
-      if (!(property.timezone === 'UTC' || property.timezone === 'ignore')) {
+      if (property.timezone !== 'ignore') {
         column += ' WITH TIME ZONE';
       }
       break;
@@ -482,8 +482,21 @@ function postgresToProperty(metadata, name) {
     case 'integer':
     case 'text':
     case 'date':
-    case 'datetime':
       property.type = metadata.data_type;
+      break;
+    case 'time':
+      property.type = 'time';
+      property.timezone = 'ignore';
+      break;
+    case 'time with time zone':
+      property.type = 'time';
+      break;
+    case 'timestamp':
+      property.type = 'datetime';
+      property.timezone = 'ignore';
+      break;
+    case 'timestamp with time zone':
+      property.type = 'datetime';
       break;
     case 'character varying':
       property.type = 'string';
