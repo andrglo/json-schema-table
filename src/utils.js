@@ -5,16 +5,11 @@ exports.findProperty = findProperty;
 function findProperty(name, properties) {
   var property = properties[name];
   if (property === void 0) {
-    property = _.reduce(properties, function(result, prop, propName) {
-        if (result === void 0 && name === propName) {
-          return prop;
-        }
+    property = _.reduce(properties, function(res, prop, propName) {
+        return res ? res : (name === propName ? prop : void 0);
       }, void 0) ||
-      _.reduce(properties, function(result, prop) {
-        if (result === void 0 && prop.field &&
-          name === prop.field) {
-          return prop;
-        }
+      _.reduce(properties, function(res, prop) {
+        return res ? res : (prop.field && name === prop.field ? prop : void 0);
       }, void 0);
     if (property === void 0) {
       throw new Error('Property "' + name + '" not found');
