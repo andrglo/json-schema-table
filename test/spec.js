@@ -8,6 +8,9 @@ var clientSchema = require('./schemas/client.json');
 var façadeSchema = require('./schemas/façade.json');
 var personFaçadeSchema = require('./schemas/personFaçade.json');
 var taxSchema = require('./schemas/tax.json');
+var catalogSchema = require('./schemas/catalog.json');
+var reffabSchema = require('./schemas/reffab.json');
+var refforfabSchema = require('./schemas/refforfab.json');
 
 var modifiedClientSchema;
 var modifiedPersonSchema;
@@ -193,6 +196,89 @@ module.exports = function(db) {
               metadata.should.have.property('columns');
               expect(metadata.columns).to.be.a('object');
               checkColumns(metadata.columns, taxSchema);
+              done();
+            });
+        })
+        .catch(function(error) {
+          done(error);
+        });
+    });
+    it('should create catalog', function(done) {
+      var catalog = jsonSchemaTable('catalog', catalogSchema, {db: db});
+      catalog.create()
+        .then(function() {
+          return catalog.metadata()
+            .then(function(metadata) {
+              metadata.should.not.have.property('foreignKeys');
+              metadata.should.have.property('primaryKey');
+              expect(metadata.primaryKey).to.be.a('array');
+              expect(metadata.primaryKey.length).to.equal(2);
+              expect(metadata.primaryKey[0]).to.equal('NUMCAT');
+              expect(metadata.primaryKey[1]).to.equal('NUMREF');
+              metadata.should.have.property('columns');
+              expect(metadata.columns).to.be.a('object');
+              checkColumns(metadata.columns, catalogSchema);
+              done();
+            });
+        })
+        .catch(function(error) {
+          done(error);
+        });
+    });
+    it('should create reffab', function(done) {
+      var reffab = jsonSchemaTable('reffab', reffabSchema, {db: db});
+      reffab.create()
+        .then(function() {
+          return reffab.metadata()
+            .then(function(metadata) {
+              metadata.should.not.have.property('foreignKeys');
+              metadata.should.have.property('uniqueKeys');
+              expect(metadata.uniqueKeys).to.be.a('array');
+              expect(metadata.uniqueKeys.length).to.equal(3);
+              expect(metadata.uniqueKeys[0]).to.be.a('array');
+              expect(metadata.uniqueKeys[0].length).to.equal(4);
+              expect(metadata.uniqueKeys[0][0]).to.equal('NUMREF');
+              expect(metadata.uniqueKeys[0][1]).to.equal('NUMCAT');
+              expect(metadata.uniqueKeys[0][2]).to.equal('MODEL');
+              expect(metadata.uniqueKeys[0][3]).to.equal('REF');
+
+              expect(metadata.uniqueKeys[1]).to.be.a('array');
+              expect(metadata.uniqueKeys[1].length).to.equal(1);
+              expect(metadata.uniqueKeys[1][0]).to.equal('REF');
+
+              expect(metadata.uniqueKeys[2]).to.be.a('array');
+              expect(metadata.uniqueKeys[2].length).to.equal(2);
+              expect(metadata.uniqueKeys[2][0]).to.equal('REF');
+              expect(metadata.uniqueKeys[2][1]).to.equal('ORIGINAL');
+
+              metadata.should.have.property('columns');
+              expect(metadata.columns).to.be.a('object');
+              checkColumns(metadata.columns, reffabSchema);
+              done();
+            });
+        })
+        .catch(function(error) {
+          done(error);
+        });
+    });
+    it('should create refforfab', function(done) {
+      var refforfab = jsonSchemaTable('refforfab', refforfabSchema, {db: db});
+      refforfab.create()
+        .then(function() {
+          return refforfab.metadata()
+            .then(function(metadata) {
+              metadata.should.not.have.property('foreignKeys');
+              metadata.should.have.property('primaryKey');
+              expect(metadata.primaryKey).to.be.a('array');
+              expect(metadata.primaryKey.length).to.equal(5);
+              expect(metadata.primaryKey[0]).to.equal('NUMCAT');
+              expect(metadata.primaryKey[1]).to.equal('NUMREF');
+              expect(metadata.primaryKey[2]).to.equal('MODEL');
+              expect(metadata.primaryKey[3]).to.equal('REF');
+              expect(metadata.primaryKey[4]).to.equal('SUPPLIER');
+              metadata.should.have.property('columns');
+              expect(metadata.columns).to.be.a('object');
+              checkColumns(metadata.columns, refforfabSchema);
               done();
             });
         })

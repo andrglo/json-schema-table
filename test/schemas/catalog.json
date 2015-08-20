@@ -1,0 +1,17 @@
+{
+  "properties": {
+    "NUMCAT": {
+      "type": "string",
+      "maxLength": 20,
+      "required": true
+    },
+    "NUMREF": {
+      "type": "integer",
+      "required": true
+    }
+  },
+  "primaryKey": [
+    "NUMCAT",
+    "NUMREF"
+  ]
+}

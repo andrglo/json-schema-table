@@ -158,7 +158,8 @@ function getDbMetadata(dialect, tableName, schema) {
 function createTable(dialect, tableName, schema) {
 
   var columns = [];
-  var primaryKey = [];
+  var primaryKey = utils.mapToColumnName(schema.primaryKey, schema) || [];
+  var primaryKeyDefined = primaryKey.length > 0;
   var unique = [];
   var delimiters = dialect.delimiters;
   _.forEach(schema.properties, function(property, name) {
@@ -168,8 +169,7 @@ function createTable(dialect, tableName, schema) {
       return;
     }
     columns.push(wrap(fieldName, delimiters) + ' ' + fieldType);
-    if (property.primaryKey === true ||
-      (schema.primaryKey && schema.primaryKey.indexOf(name) !== -1)) {
+    if (primaryKeyDefined === false && property.primaryKey === true) {
       primaryKey.push(fieldName);
     }
     if (property.unique === true) {
@@ -184,10 +184,8 @@ function createTable(dialect, tableName, schema) {
   }
 
   if (schema.unique) {
-    schema.unique.map(function(group) {
-      unique.push(group.map(function(name) {
-        return utils.findProperty(name, schema.properties).field || name;
-      }));
+    schema.unique.map(function(key) {
+      unique.push(utils.mapToColumnName(key, schema));
     });
   }
   if (unique.length) {

@@ -42,3 +42,11 @@ function isInArray(name, array, schema) {
   });
   return found;
 }
+
+exports.mapToColumnName = mapToColumnName;
+
+function mapToColumnName(array, schema) {
+  return array && array.map(function(name) {
+    return findProperty(name, schema.properties).field || name;
+  });
+}

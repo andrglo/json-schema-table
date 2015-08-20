@@ -1,0 +1,58 @@
+{
+  "properties": {
+    "NUMREF": {
+      "type": "integer",
+      "required": true,
+      "schema": {
+        "$ref": "reffab",
+        "key": "NUMREF",
+        "position": 1
+      }
+    },
+    "NUMCAT": {
+      "type": "string",
+      "maxLength": 20,
+      "required": true,
+      "schema": {
+        "$ref": "reffab",
+        "key": "NUMCAT",
+        "position": 2
+      }
+    },
+    "MODEL": {
+      "type": "string",
+      "maxLength": 20,
+      "required": true,
+      "schema": {
+        "$ref": "reffab",
+        "key": "MODEL",
+        "position": 3
+      }
+    },
+    "REF": {
+      "type": "string",
+      "maxLength": 50,
+      "required": true,
+      "schema": {
+        "$ref": "reffab",
+        "key": "REF",
+        "position": 4
+      }
+    },
+    "SUPPLIER": {
+      "type": "integer",
+      "required": true
+    },
+    "STATUS": {
+      "type": "string",
+      "maxLength": 1
+    }
+  },
+  "primaryKey": [
+    "NUMCAT",
+    "NUMREF",
+    "MODEL",
+    "REF",
+    "SUPPLIER"
+  ]
+}
