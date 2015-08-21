@@ -113,18 +113,20 @@ function getDbMetadata(dialect, tableName, schema) {
           metadata.tablesWithPrimaryKey[record.table_name] =
             metadata.tablesWithPrimaryKey[record.table_name] || [];
           metadata.tablesWithPrimaryKey[record.table_name].push({
+            constraintName: record.constraint_name,
             name: name,
             column: record.column_name,
             property: dbToProperty(record, name)
           });
         } else if (record.constraint_name.substr(0, 4) === 'fk__') {
-          var constraintInfo = getFkConstraintInfo(record.constraint_name);
+          var constraintInfo = getFkConstraintInfo(record.constraint_name, record.ordinal_position);
           metadata.tablesWithForeignKeys[record.table_name] =
             metadata.tablesWithForeignKeys[record.table_name] || [];
           metadata.tablesWithForeignKeys[record.table_name].push({
             column: record.column_name,
             referenceColumn: constraintInfo.referenceColumn,
-            referenceTable: constraintInfo.referenceTable
+            referenceTable: constraintInfo.referenceTable,
+            constraintName: record.constraint_name
           });
         } else if (record.constraint_name.substr(0, 4) === 'uq__') {
           var info = getUqConstraintInfo(record.constraint_name, record.ordinal_position);
@@ -266,56 +268,111 @@ function createTableReferences(dialect, tableName, schema, metadata) {
 
   var commands = [];
   var delimiters = dialect.delimiters;
+
+  var $refs = [];
   _.forEach(schema.properties, function(property, name) {
     var $ref = property.$ref || (property.schema && property.schema.$ref);
     if ($ref) {
-      var foreignKey = property.field || name;
-      var referenceTableName = getReferenceTableName($ref);
-      if ((metadata.tablesWithPrimaryKey[referenceTableName] ||
-        metadata.tablesWithUniqueKeys[referenceTableName]) && !(metadata.tablesWithForeignKeys[tableName] &&
-        _.find(metadata.tablesWithForeignKeys[tableName], 'column', foreignKey))) {
-        var referenceTableKey = metadata.tablesWithPrimaryKey[referenceTableName][0];
-        if (property.schema && property.schema.key &&
-          property.schema.key !== referenceTableKey.name &&
-          property.schema.key !== referenceTableKey.column) {
-          var found;
-          _.forEach(metadata.tablesWithUniqueKeys[referenceTableName], function(uniqueKey) {
-            if (uniqueKey.length === 1 && uniqueKey[0].name === property.schema.key) {
-              found = uniqueKey[0];
-              return false;
-            }
-          });
-          if (!found) { // try the field name
-            _.forEach(metadata.tablesWithUniqueKeys[referenceTableName], function(uniqueKey) {
-              if (uniqueKey.length === 1 && uniqueKey[0].column === property.schema.key) {
-                found = uniqueKey[0];
-                return false;
-              }
-            });
+      var ofTable = getReferenceTableName($ref);
+      if (metadata.tablesWithPrimaryKey[ofTable] || metadata.tablesWithUniqueKeys[ofTable]) {
+        var foreignKey = property.field || name;
+        var key = property.schema && property.schema.key;
+        if (!key) {
+          var pk = metadata.tablesWithPrimaryKey[ofTable];
+          if (pk && pk.length === 1) {
+            key = pk[0].column;
           }
-          assert(found, 'Table ' + referenceTableName +
-            ' should have a unique key with only one field to be referenced');
-          referenceTableKey = found;
+        }
+        assert(key, 'Foreign key "' + foreignKey + '" don\'t have a candidate key column defined in table "' + ofTable + '"');
+        var index = property.schema && property.schema.position;
+        if (!index) {
+          $refs.push({
+            table: ofTable,
+            foreignKey: foreignKey,
+            key: key
+          });
         } else {
-          assert(metadata.tablesWithPrimaryKey[referenceTableName].length === 1,
-            'Table ' + referenceTableName +
-            ' should have a primary key with only one field to be referenced');
+          var fk = $refs.reduce(function(res, $ref) {
+            return res || ($ref.table === ofTable && $ref.multi && $ref);
+          }, void 0);
+
+          if (!fk) {
+            fk = {
+              table: ofTable,
+              multi: []
+            };
+            $refs.push(fk);
+          }
+          fk.multi.push({
+            foreignKey: foreignKey,
+            key: key
+          });
         }
-        var constraintName = 'FK__' + tableName + '__' + foreignKey + '__' +
-          referenceTableName + '__' + referenceTableKey.column;
-        var cmd = 'ALTER TABLE ' + wrap(tableName, delimiters) +
-          ' ADD CONSTRAINT ' + wrap(constraintName, delimiters) + ' FOREIGN KEY (' +
-          wrap(foreignKey, delimiters) + ') REFERENCES ' + wrap(referenceTableName, delimiters) +
-          '(' + wrap(referenceTableKey.column, delimiters) + ')';
-        if (!metadata.columns[foreignKey]) {
-          cmd = 'ALTER TABLE ' + wrap(tableName, delimiters) + ' ADD ' +
-            wrap(foreignKey, delimiters) + ' ' +
-            dialect.propertyToDb(referenceTableKey.property, foreignKey) + ';' + cmd;
-        }
-        commands.push(cmd);
       }
     }
   });
+
+  _.forEach($refs, function($ref) {
+    var table = $ref.table;
+    var $refKeys = $ref.multi ? $ref.multi.map(function(info) {
+      return info.key;
+    }) : [$ref.key];
+
+    var $refForeignKeys = $ref.multi ? $ref.multi.map(function(info) {
+      return info.foreignKey;
+    }) : [$ref.foreignKey];
+
+    var primaryKey = metadata.tablesWithPrimaryKey[table];
+    var candidateKeys = primaryKey ? [primaryKey] : [];
+    _.forEach(metadata.tablesWithUniqueKeys[table], function(key) {
+      candidateKeys.push(key);
+    });
+    var candidateKey;
+    _.forEach(candidateKeys, function(ck) {
+      if (_.difference($refKeys, ck.map(function(key) {
+          return key.column;
+        })).length === 0) {
+        candidateKey = ck;
+        return false;
+      }
+    });
+    if (!candidateKey) {
+      throw new Error('Table "' + table + '" has no candidate key for "' + $refKeys.join(',') + '" to be referenced');
+    }
+    var constraintName = 'FK__' + tableName + '_' + $refForeignKeys.join('_') + '__' + table + '__' + $refKeys.join('__');
+
+    var hfk = false;
+    _.forEach(metadata.tablesWithForeignKeys[tableName], function(fk) {
+      if (constraintName.toLowerCase() === fk.constraintName.toLowerCase()) {
+        hfk = true;
+        return false;
+      }
+    });
+
+    if (hfk === false) {
+      $refForeignKeys.map(function(foreignKey) {
+        if (!metadata.columns[foreignKey]) {
+          var property = candidateKey.reduce(function(result, key) {
+            return result || key.property;
+          }, void 0);
+          commands.push('ALTER TABLE ' + wrap(tableName, delimiters) + ' ADD ' +
+            wrap(foreignKey, delimiters) + ' ' +
+            dialect.propertyToDb(property, foreignKey));
+        }
+      });
+
+      commands.push('ALTER TABLE ' + wrap(tableName, delimiters) +
+        ' ADD CONSTRAINT ' + wrap(constraintName, delimiters) + ' FOREIGN KEY (' +
+        $refForeignKeys.map(function(column) {
+          return wrap(column, delimiters);
+        }).join(',') + ') REFERENCES ' + wrap(table, delimiters) +
+        ' (' + $refKeys.map(function(column) {
+          return wrap(column, delimiters);
+        }).join(',') + ')');
+    }
+
+  });
+
   return commands.length ? dialect.db.execute(commands.join(';')) : Promise.resolve();
 }
 
@@ -560,14 +617,14 @@ function getUqConstraintInfo(constraint, order) {
   };
 }
 
-function getFkConstraintInfo(constraint) {
+function getFkConstraintInfo(constraint, order) {
   var constraintInfo = {};
-  const re = /^fk__.*?__(.*?)__(.*?)__(.*)/;
+  const re = /^fk__.*?__(.*)/;
   var match = re.exec(constraint);
   if (match) {
-    constraintInfo.column = match[1];
-    constraintInfo.referenceTable = match[2];
-    constraintInfo.referenceColumn = match[3];
+    var info = match[1].split('__');
+    constraintInfo.referenceTable = info[0];
+    constraintInfo.referenceColumn = info[order];
   }
   return constraintInfo;
 }

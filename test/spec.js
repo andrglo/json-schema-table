@@ -54,7 +54,7 @@ function checkForeignKey(fks, fk, table, column) {
   expect(fk).to.be.a('object');
   fk.should.have.property('references');
   fk.references.should.have.property('table');
-  expect(fk.references.table).to.equal(table);
+  expect(fk.references.table.toLowerCase()).to.equal(table.toLowerCase());
   fk.references.should.have.property('column');
   expect(fk.references.column.toLowerCase()).to.equal(column.toLowerCase());
 }
@@ -303,23 +303,13 @@ module.exports = function(db) {
           done(error);
         });
     });
-    it('should not add foreign key to table client due tax has two columns as primary keys', function(done) {
-      var client = jsonSchemaTable('client', modifiedClientSchema, {db: db});
-      client.sync()
-        .then(function() {
-          done(new Error('Invalid reference created'));
-        })
-        .catch(function(error) {
-          expect(error.message.indexOf('primary key with only one field') !== -1).to.equal(true);
-          done();
-        })
-        .catch(function(error) {
-          done(error);
-        });
-    });
-    it('then lets alter tax to add a single column primary key', function(done) {
+    it('lets alter tax to add a single column primary key', function(done) {
       modifiedTaxSchema = _.cloneDeep(taxSchema);
-      modifiedTaxSchema.properties.id = {type: 'integer', autoIncrement: true, primaryKey: true}
+      modifiedTaxSchema.properties.id = {
+        type: 'integer',
+        autoIncrement: true,
+        primaryKey: true
+      };
       modifiedTaxSchema.required = modifiedTaxSchema.primaryKey;
       delete modifiedTaxSchema.primaryKey;
       var tax = jsonSchemaTable('tax', modifiedTaxSchema, {db: db});
@@ -395,137 +385,181 @@ module.exports = function(db) {
         });
     });
 
-    describe('modify structure', function() {
-      it('should not alter person column dateOfBirth', function(done) {
-        modifiedPersonSchema = _.cloneDeep(personSchema);
-        modifiedPersonSchema.properties.dateOfBirth.type = 'string';
-        var person = jsonSchemaTable('person', modifiedPersonSchema, {db: db});
-        person.sync()
-          .then(function() {
-            done(new Error('Invalid alter table'));
-          })
-          .catch(function(error) {
-            expect(error.message.indexOf('dateOfBirth cannot be modified') !== -1).to.equal(true);
-            done();
-          })
-          .catch(function(error) {
-            done(error);
-          });
-      });
-      it('should not alter client column initials to a small string', function(done) {
-        modifiedClientSchema.properties.initials.maxLength = 2;
-        var client = jsonSchemaTable('client', modifiedClientSchema, {db: db});
-        client.sync()
-          .then(function() {
-            done(new Error('Invalid alter table'));
-          })
-          .catch(function(error) {
-            expect(error.message.indexOf('initials cannot be modified') !== -1).to.equal(true);
-            done();
-          })
-          .catch(function(error) {
-            done(error);
-          });
-      });
-      it('should alter client column initials to a bigger string', function(done) {
-        modifiedClientSchema.properties.initials.maxLength = 21;
-        var client = jsonSchemaTable('client', modifiedClientSchema, {db: db});
-        client.sync()
-          .then(function() {
-            return client.metadata()
-              .then(function(metadata) {
-                metadata.should.have.property('columns');
-                expect(metadata.columns).to.be.a('object');
-                checkColumns(metadata.columns, modifiedClientSchema);
-                done();
-              });
-          })
-          .catch(function(error) {
-            done(error);
-          });
-      });
-      it('should not alter client column sales to a small number of decimals', function(done) {
-        modifiedClientSchema.properties.sales.decimals = 4;
-        var client = jsonSchemaTable('client', modifiedClientSchema, {db: db});
-        client.sync()
-          .then(function() {
-            done(new Error('Invalid alter table'));
-          })
-          .catch(function(error) {
-            expect(error.message.indexOf('sales cannot be modified') !== -1).to.equal(true);
-            done();
-          })
-          .catch(function(error) {
-            done(error);
-          });
-      });
-      it('should not alter client column sales to a bigger number of decimals', function(done) {
-        modifiedClientSchema.properties.sales.decimals = 8;
-        var client = jsonSchemaTable('client', modifiedClientSchema, {db: db});
-        client.sync()
-          .then(function() {
-            done(new Error('Invalid alter table'));
-          })
-          .catch(function(error) {
-            expect(error.message.indexOf('sales cannot be modified') !== -1).to.equal(true);
-            done();
-          })
-          .catch(function(error) {
-            done(error);
-          });
-      });
-      it('should not alter client column sales to a bigger number of decimals with no equivalent greater length', function(done) {
-        modifiedClientSchema.properties.sales.maxLength = 21;
-        var client = jsonSchemaTable('client', modifiedClientSchema, {db: db});
-        client.sync()
-          .then(function() {
-            done(new Error('Invalid alter table'));
-          })
-          .catch(function(error) {
-            expect(error.message.indexOf('sales cannot be modified') !== -1).to.equal(true);
-            done();
-          })
-          .catch(function(error) {
-            done(error);
-          });
-      });
-      it('should alter client column sales to a bigger number of decimals and length', function(done) {
-        modifiedClientSchema.properties.sales.maxLength = 22;
-        var client = jsonSchemaTable('client', modifiedClientSchema, {db: db});
-        client.sync()
-          .then(function() {
-            return client.metadata()
-              .then(function(metadata) {
-                metadata.should.have.property('columns');
-                expect(metadata.columns).to.be.a('object');
-                checkColumns(metadata.columns, modifiedClientSchema);
-                done();
-              });
-          })
-          .catch(function(error) {
-            done(error);
-          });
-      });
-      it('should alter person column name to text', function(done) {
-        modifiedPersonSchema.properties.dateOfBirth.type = 'date';
-        modifiedPersonSchema.properties.name.type = 'text';
-        delete modifiedPersonSchema.properties.name.type;
-        var person = jsonSchemaTable('person', modifiedPersonSchema, {db: db});
-        person.sync()
-          .then(function() {
-            return person.metadata()
-              .then(function(metadata) {
-                metadata.should.have.property('columns');
-                expect(metadata.columns).to.be.a('object');
-                checkColumns(metadata.columns, modifiedPersonSchema);
-                done();
-              });
-          })
-          .catch(function(error) {
-            done(error);
-          });
-      });
+  });
+
+  describe('modify structure', function() {
+    it('should not alter person column dateOfBirth', function(done) {
+      modifiedPersonSchema = _.cloneDeep(personSchema);
+      modifiedPersonSchema.properties.dateOfBirth.type = 'string';
+      var person = jsonSchemaTable('person', modifiedPersonSchema, {db: db});
+      person.sync()
+        .then(function() {
+          done(new Error('Invalid alter table'));
+        })
+        .catch(function(error) {
+          expect(error.message.indexOf('dateOfBirth cannot be modified') !== -1).to.equal(true);
+          done();
+        })
+        .catch(function(error) {
+          done(error);
+        });
     });
+    it('should not alter client column initials to a small string', function(done) {
+      modifiedClientSchema.properties.initials.maxLength = 2;
+      var client = jsonSchemaTable('client', modifiedClientSchema, {db: db});
+      client.sync()
+        .then(function() {
+          done(new Error('Invalid alter table'));
+        })
+        .catch(function(error) {
+          expect(error.message.indexOf('initials cannot be modified') !== -1).to.equal(true);
+          done();
+        })
+        .catch(function(error) {
+          done(error);
+        });
+    });
+    it('should alter client column initials to a bigger string', function(done) {
+      modifiedClientSchema.properties.initials.maxLength = 21;
+      var client = jsonSchemaTable('client', modifiedClientSchema, {db: db});
+      client.sync()
+        .then(function() {
+          return client.metadata()
+            .then(function(metadata) {
+              metadata.should.have.property('columns');
+              expect(metadata.columns).to.be.a('object');
+              checkColumns(metadata.columns, modifiedClientSchema);
+              done();
+            });
+        })
+        .catch(function(error) {
+          done(error);
+        });
+    });
+    it('should not alter client column sales to a small number of decimals', function(done) {
+      modifiedClientSchema.properties.sales.decimals = 4;
+      var client = jsonSchemaTable('client', modifiedClientSchema, {db: db});
+      client.sync()
+        .then(function() {
+          done(new Error('Invalid alter table'));
+        })
+        .catch(function(error) {
+          expect(error.message.indexOf('sales cannot be modified') !== -1).to.equal(true);
+          done();
+        })
+        .catch(function(error) {
+          done(error);
+        });
+    });
+    it('should not alter client column sales to a bigger number of decimals', function(done) {
+      modifiedClientSchema.properties.sales.decimals = 8;
+      var client = jsonSchemaTable('client', modifiedClientSchema, {db: db});
+      client.sync()
+        .then(function() {
+          done(new Error('Invalid alter table'));
+        })
+        .catch(function(error) {
+          expect(error.message.indexOf('sales cannot be modified') !== -1).to.equal(true);
+          done();
+        })
+        .catch(function(error) {
+          done(error);
+        });
+    });
+    it('should not alter client column sales to a bigger number of decimals with no equivalent greater length', function(done) {
+      modifiedClientSchema.properties.sales.maxLength = 21;
+      var client = jsonSchemaTable('client', modifiedClientSchema, {db: db});
+      client.sync()
+        .then(function() {
+          done(new Error('Invalid alter table'));
+        })
+        .catch(function(error) {
+          expect(error.message.indexOf('sales cannot be modified') !== -1).to.equal(true);
+          done();
+        })
+        .catch(function(error) {
+          done(error);
+        });
+    });
+    it('should alter client column sales to a bigger number of decimals and length', function(done) {
+      modifiedClientSchema.properties.sales.maxLength = 22;
+      var client = jsonSchemaTable('client', modifiedClientSchema, {db: db});
+      client.sync()
+        .then(function() {
+          return client.metadata()
+            .then(function(metadata) {
+              metadata.should.have.property('columns');
+              expect(metadata.columns).to.be.a('object');
+              checkColumns(metadata.columns, modifiedClientSchema);
+              done();
+            });
+        })
+        .catch(function(error) {
+          done(error);
+        });
+    });
+    it('should alter person column name to text', function(done) {
+      modifiedPersonSchema.properties.dateOfBirth.type = 'date';
+      modifiedPersonSchema.properties.name.type = 'text';
+      delete modifiedPersonSchema.properties.name.type;
+      var person = jsonSchemaTable('person', modifiedPersonSchema, {db: db});
+      person.sync()
+        .then(function() {
+          return person.metadata()
+            .then(function(metadata) {
+              metadata.should.have.property('columns');
+              expect(metadata.columns).to.be.a('object');
+              checkColumns(metadata.columns, modifiedPersonSchema);
+              done();
+            });
+        })
+        .catch(function(error) {
+          done(error);
+        });
+    });
+  });
+
+  describe('tables with multiple columns references', function() {
+
+    it('should add 2 foreign keys to table reffab', function(done) {
+      var reffab = jsonSchemaTable('reffab', reffabSchema, {db: db});
+      reffab.sync()
+        .then(function() {
+          return reffab.metadata()
+            .then(function(metadata) {
+              metadata.should.have.property('foreignKeys');
+              expect(metadata.foreignKeys).to.be.a('array');
+              expect(metadata.foreignKeys.length).to.equal(2);
+              checkForeignKey(metadata.foreignKeys, 'NUMCAT', 'catalog', 'NUMCAT');
+              checkForeignKey(metadata.foreignKeys, 'NUMREF', 'CATALOG', 'NUMREF');
+              done();
+            });
+        })
+        .catch(function(error) {
+          done(error);
+        });
+    });
+
+    it('should add 4 foreign keys to table refforfab', function(done) {
+      var refforfab = jsonSchemaTable('refforfab', refforfabSchema, {db: db});
+      refforfab.sync()
+        .then(function() {
+          return refforfab.metadata()
+            .then(function(metadata) {
+              metadata.should.have.property('foreignKeys');
+              expect(metadata.foreignKeys).to.be.a('array');
+              expect(metadata.foreignKeys.length).to.equal(4);
+              checkForeignKey(metadata.foreignKeys, 'NUMREF', 'reffab', 'NUMREF');
+              checkForeignKey(metadata.foreignKeys, 'NUMCAT', 'reffab', 'NUMCAT');
+              checkForeignKey(metadata.foreignKeys, 'MODEL', 'reffab', 'MODEL');
+              checkForeignKey(metadata.foreignKeys, 'REF', 'reffab', 'REF');
+              done();
+            });
+        })
+        .catch(function(error) {
+          done(error);
+        });
+    })
 
   });
 
