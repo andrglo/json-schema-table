@@ -49,14 +49,26 @@ function checkColumns(columns, schema) {
   });
 }
 
-function checkForeignKey(fks, fk, table, column) {
-  fk = _.find(fks, 'column', fk);
-  expect(fk).to.be.a('object');
-  fk.should.have.property('references');
-  fk.references.should.have.property('table');
-  expect(fk.references.table.toLowerCase()).to.equal(table.toLowerCase());
-  fk.references.should.have.property('column');
-  expect(fk.references.column.toLowerCase()).to.equal(column.toLowerCase());
+function checkForeignKey(fks, columns, refTable, refTableColumns) {
+  var found;
+  var joinedColumns = columns.join().toLowerCase();
+  var joinedRefColumns = refTableColumns.join().toLowerCase();
+  _.forEach(fks, function(fk) {
+    if (fk.table.toLowerCase() === refTable.toLowerCase()) {
+      var joinedFkColumns = fk.columns.map(function(column) {
+        return column.name;
+      }).join().toLowerCase();
+      var joinedFkRefColumns = fk.columns.map(function(column) {
+        return column.references;
+      }).join().toLowerCase();
+      if (joinedFkColumns === joinedColumns &&
+        joinedFkRefColumns === joinedRefColumns) {
+        found = true;
+        return false;
+      }
+    }
+  });
+  expect(found).to.equal(true, 'Foreign key ' + columns.join() + ' don\'t have a correspondent key');
 }
 
 module.exports = function(db) {
@@ -87,6 +99,19 @@ module.exports = function(db) {
               expect(metadata.primaryKey).to.be.a('array');
               expect(metadata.primaryKey.length).to.equal(1);
               expect(metadata.primaryKey[0]).to.equal('personId');
+
+              metadata.should.have.property('uniqueKeys');
+              expect(metadata.uniqueKeys).to.be.a('array');
+              expect(metadata.uniqueKeys.length).to.equal(2);
+              expect(metadata.uniqueKeys[0]).to.be.a('array');
+              expect(metadata.uniqueKeys[0].length).to.equal(1);
+              expect(metadata.uniqueKeys[0][0]).to.equal('fieldName');
+
+              expect(metadata.uniqueKeys[1]).to.be.a('array');
+              expect(metadata.uniqueKeys[1].length).to.equal(2);
+              expect(metadata.uniqueKeys[1][0]).to.equal('state');
+              expect(metadata.uniqueKeys[1][1]).to.equal('dateOfBirth');
+
               metadata.should.have.property('columns');
               expect(metadata.columns).to.be.a('object');
               checkColumns(metadata.columns, personSchema);
@@ -213,8 +238,8 @@ module.exports = function(db) {
               metadata.should.have.property('primaryKey');
               expect(metadata.primaryKey).to.be.a('array');
               expect(metadata.primaryKey.length).to.equal(2);
-              expect(metadata.primaryKey[0]).to.equal('NUMCAT');
-              expect(metadata.primaryKey[1]).to.equal('NUMREF');
+              expect(metadata.primaryKey[0]).to.equal('catnum');
+              expect(metadata.primaryKey[1]).to.equal('refnum');
               metadata.should.have.property('columns');
               expect(metadata.columns).to.be.a('object');
               checkColumns(metadata.columns, catalogSchema);
@@ -341,10 +366,10 @@ module.exports = function(db) {
               metadata.should.have.property('foreignKeys');
               expect(metadata.foreignKeys).to.be.a('array');
               expect(metadata.foreignKeys.length).to.equal(4);
-              checkForeignKey(metadata.foreignKeys, 'clientId', 'person', 'personId');
-              checkForeignKey(metadata.foreignKeys, 'cityTax', 'tax', 'id');
-              checkForeignKey(metadata.foreignKeys, 'stateTax', 'tax', 'id');
-              checkForeignKey(metadata.foreignKeys, 'tax', 'tax', 'id');
+              checkForeignKey(metadata.foreignKeys, ['clientId'], 'person', ['personId']);
+              checkForeignKey(metadata.foreignKeys, ['cityTax'], 'tax', ['id']);
+              checkForeignKey(metadata.foreignKeys, ['stateTax'], 'tax', ['id']);
+              checkForeignKey(metadata.foreignKeys, ['tax'], 'tax', ['id']);
               done();
             });
         })
@@ -375,8 +400,8 @@ module.exports = function(db) {
               metadata.should.have.property('foreignKeys');
               expect(metadata.foreignKeys).to.be.a('array');
               expect(metadata.foreignKeys.length).to.equal(2);
-              checkForeignKey(metadata.foreignKeys, 'XfaçadeX', 'façade', 'Nome');
-              checkForeignKey(metadata.foreignKeys, 'person', 'person', 'fieldName');
+              checkForeignKey(metadata.foreignKeys, ['XfaçadeX'], 'façade', ['Nome']);
+              checkForeignKey(metadata.foreignKeys, ['person'], 'person', ['fieldName']);
               done();
             });
         })
@@ -529,9 +554,9 @@ module.exports = function(db) {
             .then(function(metadata) {
               metadata.should.have.property('foreignKeys');
               expect(metadata.foreignKeys).to.be.a('array');
-              expect(metadata.foreignKeys.length).to.equal(2);
-              checkForeignKey(metadata.foreignKeys, 'NUMCAT', 'catalog', 'NUMCAT');
-              checkForeignKey(metadata.foreignKeys, 'NUMREF', 'CATALOG', 'NUMREF');
+              expect(metadata.foreignKeys.length).to.equal(1);
+              checkForeignKey(metadata.foreignKeys, ['NUMCAT', 'NUMREF'],
+                'catalog', ['catnum', 'refnum']);
               done();
             });
         })
@@ -548,18 +573,17 @@ module.exports = function(db) {
             .then(function(metadata) {
               metadata.should.have.property('foreignKeys');
               expect(metadata.foreignKeys).to.be.a('array');
-              expect(metadata.foreignKeys.length).to.equal(4);
-              checkForeignKey(metadata.foreignKeys, 'NUMREF', 'reffab', 'NUMREF');
-              checkForeignKey(metadata.foreignKeys, 'NUMCAT', 'reffab', 'NUMCAT');
-              checkForeignKey(metadata.foreignKeys, 'MODEL', 'reffab', 'MODEL');
-              checkForeignKey(metadata.foreignKeys, 'REF', 'reffab', 'REF');
+              expect(metadata.foreignKeys.length).to.equal(1);
+              checkForeignKey(metadata.foreignKeys,
+                ['NUMREF', 'NUMCAT', 'MODEL', 'REF'], 'reffab',
+                ['NUMREF', 'NUMCAT', 'MODEL', 'REF']);
               done();
             });
         })
         .catch(function(error) {
           done(error);
         });
-    })
+    });
 
   });
 

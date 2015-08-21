@@ -56,7 +56,7 @@ function jsonSchemaTable(tableName, schema, config) {
           var primaryKey = metadata.tablesWithPrimaryKey[tableName];
           if (primaryKey) {
             tableMetadata.primaryKey = primaryKey.map(function(column) {
-              return column.column;
+              return column.name;
             });
           }
           var uniqueKeys = metadata.tablesWithUniqueKeys[tableName];
@@ -64,7 +64,7 @@ function jsonSchemaTable(tableName, schema, config) {
             tableMetadata.uniqueKeys = [];
             _.forEach(uniqueKeys, function(uniqueKey) {
               tableMetadata.uniqueKeys.push(uniqueKey.map(function(column) {
-                return column.column;
+                return column.name;
               }));
             });
           }
@@ -72,11 +72,8 @@ function jsonSchemaTable(tableName, schema, config) {
           if (foreignKeys) {
             tableMetadata.foreignKeys = foreignKeys.map(function(foreignKey) {
               return {
-                column: foreignKey.column,
-                references: {
-                  table: foreignKey.referenceTable,
-                  column: foreignKey.referenceColumn
-                }
+                table: foreignKey.table,
+                columns: foreignKey.columns
               };
             });
           }
@@ -99,46 +96,50 @@ function getDbMetadata(dialect, tableName, schema) {
     columns: {}
   };
   return dialect.db.query('SELECT pk.CONSTRAINT_NAME as constraint_name,pk.TABLE_NAME as table_name,' +
-    'pk.COLUMN_NAME as column_name,pk.ORDINAL_POSITION as ordinal_position,' +
+    'pk.COLUMN_NAME as column_name,' +
+    'rfk.TABLE_NAME as ref_table_name,rfk.COLUMN_NAME as ref_column_name,' +
     'c.DATA_TYPE as data_type,c.CHARACTER_MAXIMUM_LENGTH as character_maximum_length,' +
     'c.NUMERIC_PRECISION as numeric_precisison,c.NUMERIC_SCALE as numerico_scale ' +
-    'FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE pk ' +
-    'INNER JOIN INFORMATION_SCHEMA.COLUMNS c ON pk.COLUMN_NAME=c.COLUMN_NAME AND pk.TABLE_NAME=c.TABLE_NAME ' +
-    'ORDER BY pk.CONSTRAINT_NAME,pk.ORDINAL_POSITION')
+    'FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE as pk ' +
+    'INNER JOIN INFORMATION_SCHEMA.COLUMNS as c ON pk.COLUMN_NAME=c.COLUMN_NAME AND pk.TABLE_NAME=c.TABLE_NAME AND ' +
+    'pk.TABLE_CATALOG=c.TABLE_CATALOG AND pk.TABLE_SCHEMA=c.TABLE_SCHEMA ' +
+    'LEFT OUTER JOIN INFORMATION_SCHEMA.REFERENTIAL_CONSTRAINTS as rk ON pk.CONSTRAINT_NAME=rk.CONSTRAINT_NAME ' +
+    'LEFT OUTER JOIN INFORMATION_SCHEMA.KEY_COLUMN_USAGE as rfk ON rk.UNIQUE_CONSTRAINT_NAME=rfk.CONSTRAINT_NAME ' +
+    'AND pk.ORDINAL_POSITION=rfk.ORDINAL_POSITION ' +
+    'ORDER BY pk.TABLE_NAME,pk.CONSTRAINT_NAME,pk.ORDINAL_POSITION')
     .then(function(recordset) {
+      var constraints = {};
       recordset.map(function(record) {
-        record.constraint_name = record.constraint_name.toLowerCase();
-        if (record.constraint_name.substr(0, 4) === 'pk__') {
-          var name = getPkConstraintInfo(record.constraint_name, record.ordinal_position);
-          metadata.tablesWithPrimaryKey[record.table_name] =
-            metadata.tablesWithPrimaryKey[record.table_name] || [];
-          metadata.tablesWithPrimaryKey[record.table_name].push({
-            constraintName: record.constraint_name,
-            name: name,
-            column: record.column_name,
-            property: dbToProperty(record, name)
-          });
-        } else if (record.constraint_name.substr(0, 4) === 'fk__') {
-          var constraintInfo = getFkConstraintInfo(record.constraint_name, record.ordinal_position);
-          metadata.tablesWithForeignKeys[record.table_name] =
-            metadata.tablesWithForeignKeys[record.table_name] || [];
-          metadata.tablesWithForeignKeys[record.table_name].push({
-            column: record.column_name,
-            referenceColumn: constraintInfo.referenceColumn,
-            referenceTable: constraintInfo.referenceTable,
-            constraintName: record.constraint_name
-          });
-        } else if (record.constraint_name.substr(0, 4) === 'uq__') {
-          var info = getUqConstraintInfo(record.constraint_name, record.ordinal_position);
-          metadata.tablesWithUniqueKeys[record.table_name] =
-            metadata.tablesWithUniqueKeys[record.table_name] || {};
-          metadata.tablesWithUniqueKeys[record.table_name][info.key] =
-            metadata.tablesWithUniqueKeys[record.table_name][info.key] || [];
-          metadata.tablesWithUniqueKeys[record.table_name][info.key].push({
-            name: info.name,
-            column: record.column_name,
-            property: dbToProperty(record, info.name)
-          });
+        var constraint =
+          constraints[record.constraint_name] = constraints[record.constraint_name] || {
+              table: record.table_name,
+              references: record.ref_table_name,
+              columns: []
+            };
+        constraint.columns.push(dbToProperty(record));
+      });
+      return constraints;
+    })
+    .then(function(constraints) {
+      _.forEach(constraints, function(constraint, constraintName) {
+        var constraintType = constraintName.substr(0, 2).toLowerCase();
+        switch (constraintType) {
+          case 'pk':
+            metadata.tablesWithPrimaryKey[constraint.table] = constraint.columns;
+            break;
+          case 'fk':
+            var fk = metadata.tablesWithForeignKeys[constraint.table] =
+              metadata.tablesWithForeignKeys[constraint.table] || [];
+            fk.push({
+              table: constraint.references,
+              columns: constraint.columns
+            });
+            break;
+          case 'uq':
+            var uq = metadata.tablesWithUniqueKeys[constraint.table] =
+              metadata.tablesWithUniqueKeys[constraint.table] || [];
+            uq.push(constraint.columns);
+            break;
         }
       });
       return dialect.db.query('SELECT COLUMN_NAME as column_name,IS_NULLABLE as is_nullable,' +
@@ -149,9 +150,9 @@ function getDbMetadata(dialect, tableName, schema) {
     })
     .then(function(recordset) {
       recordset.map(function(record) {
-        var propertyName = getSchemaPropertyName(schema, record.column_name);
+        //var propertyName = getSchemaPropertyName(schema, record.column_name);
         metadata.columns[record.column_name] =
-          dbToProperty(record, propertyName);
+          dbToProperty(record);
       });
       return metadata;
     });
@@ -243,7 +244,7 @@ function alterTable(dialect, tableName, schema, metadata) {
   });
   var oldPrimaryKey = metadata.tablesWithPrimaryKey[tableName] ?
     metadata.tablesWithPrimaryKey[tableName].map(function(column) {
-      return column.column;
+      return column.name;
     }) : [];
   if (_.difference(primaryKey, oldPrimaryKey).length) {
     if (oldPrimaryKey.length) {
@@ -273,54 +274,40 @@ function createTableReferences(dialect, tableName, schema, metadata) {
   _.forEach(schema.properties, function(property, name) {
     var $ref = property.$ref || (property.schema && property.schema.$ref);
     if ($ref) {
-      var ofTable = getReferenceTableName($ref);
-      if (metadata.tablesWithPrimaryKey[ofTable] || metadata.tablesWithUniqueKeys[ofTable]) {
+      var referencedTableName = getReferencedTableName($ref);
+      if (metadata.tablesWithPrimaryKey[referencedTableName] || metadata.tablesWithUniqueKeys[referencedTableName]) {
         var foreignKey = property.field || name;
         var key = property.schema && property.schema.key;
         if (!key) {
-          var pk = metadata.tablesWithPrimaryKey[ofTable];
+          var pk = metadata.tablesWithPrimaryKey[referencedTableName];
           if (pk && pk.length === 1) {
-            key = pk[0].column;
+            key = pk[0].name;
           }
         }
-        assert(key, 'Foreign key "' + foreignKey + '" don\'t have a candidate key column defined in table "' + ofTable + '"');
-        var index = property.schema && property.schema.position;
-        if (!index) {
-          $refs.push({
-            table: ofTable,
-            foreignKey: foreignKey,
-            key: key
-          });
-        } else {
-          var fk = $refs.reduce(function(res, $ref) {
-            return res || ($ref.table === ofTable && $ref.multi && $ref);
-          }, void 0);
-
-          if (!fk) {
-            fk = {
-              table: ofTable,
-              multi: []
-            };
-            $refs.push(fk);
-          }
-          fk.multi.push({
-            foreignKey: foreignKey,
-            key: key
-          });
-        }
+        assert(key, 'Foreign key "' + foreignKey + '" don\'t have a candidate key column defined in table "' + referencedTableName + '"');
+        $refs.push({
+          table: referencedTableName,
+          key: [key],
+          foreignKey: [foreignKey]
+        });
       }
     }
+  });
+  _.forEach(schema.foreignKeys, function(keys, referencedTableName) {
+    var fk = {
+      table: referencedTableName,
+      key: [],
+      foreignKey: []
+    };
+    _.forEach(keys, function(foreignKey, key) {
+      fk.key.push(key);
+      fk.foreignKey.push(foreignKey);
+    });
+    $refs.push(fk);
   });
 
   _.forEach($refs, function($ref) {
     var table = $ref.table;
-    var $refKeys = $ref.multi ? $ref.multi.map(function(info) {
-      return info.key;
-    }) : [$ref.key];
-
-    var $refForeignKeys = $ref.multi ? $ref.multi.map(function(info) {
-      return info.foreignKey;
-    }) : [$ref.foreignKey];
 
     var primaryKey = metadata.tablesWithPrimaryKey[table];
     var candidateKeys = primaryKey ? [primaryKey] : [];
@@ -329,31 +316,39 @@ function createTableReferences(dialect, tableName, schema, metadata) {
     });
     var candidateKey;
     _.forEach(candidateKeys, function(ck) {
-      if (_.difference($refKeys, ck.map(function(key) {
-          return key.column;
-        })).length === 0) {
+      if (ck.map(function(k) {
+          return k.name;
+        }).join() === $ref.key.join()) {
         candidateKey = ck;
         return false;
       }
     });
     if (!candidateKey) {
-      throw new Error('Table "' + table + '" has no candidate key for "' + $refKeys.join(',') + '" to be referenced');
+      throw new Error('Table "' + table + '" has no candidate key for "' + $ref.key.join(',') + '" to be referenced');
     }
-    var constraintName = 'FK__' + tableName + '_' + $refForeignKeys.join('_') + '__' + table + '__' + $refKeys.join('__');
 
     var hfk = false;
+    var hash = ($ref.foreignKey.join() + table + $ref.key.join('')).toLowerCase();
     _.forEach(metadata.tablesWithForeignKeys[tableName], function(fk) {
-      if (constraintName.toLowerCase() === fk.constraintName.toLowerCase()) {
+      var fkHash =
+        (fk.columns.reduce(function(columns, column) {
+          return columns + column.name;
+        }, '') +
+        fk.table +
+        fk.columns.reduce(function(columns, column) {
+          return columns + column.references;
+        }, '')).toLowerCase();
+      if (hash === fkHash) {
         hfk = true;
         return false;
       }
     });
 
     if (hfk === false) {
-      $refForeignKeys.map(function(foreignKey) {
+      $ref.foreignKey.map(function(foreignKey, index) {
         if (!metadata.columns[foreignKey]) {
           var property = candidateKey.reduce(function(result, key) {
-            return result || key.property;
+            return result || (key.name === $ref.key[index] && key);
           }, void 0);
           commands.push('ALTER TABLE ' + wrap(tableName, delimiters) + ' ADD ' +
             wrap(foreignKey, delimiters) + ' ' +
@@ -361,12 +356,13 @@ function createTableReferences(dialect, tableName, schema, metadata) {
         }
       });
 
+      var constraintName = 'FK__' + tableName + '__' + $ref.foreignKey.join('__');
       commands.push('ALTER TABLE ' + wrap(tableName, delimiters) +
         ' ADD CONSTRAINT ' + wrap(constraintName, delimiters) + ' FOREIGN KEY (' +
-        $refForeignKeys.map(function(column) {
+        $ref.foreignKey.map(function(column) {
           return wrap(column, delimiters);
         }).join(',') + ') REFERENCES ' + wrap(table, delimiters) +
-        ' (' + $refKeys.map(function(column) {
+        ' (' + $ref.key.map(function(column) {
           return wrap(column, delimiters);
         }).join(',') + ')');
     }
@@ -422,8 +418,8 @@ function propertyToMssql(property, name, schema) {
   return column;
 }
 
-function mssqlToProperty(metadata, name) {
-  var property = {};
+function mssqlToProperty(metadata) {
+  var property = {name: metadata.column_name};
   switch (metadata.data_type) {
     case 'int':
       property.type = 'integer';
@@ -449,10 +445,13 @@ function mssqlToProperty(metadata, name) {
       property.decimals = metadata.numeric_scale;
       break;
     default:
-      throw new Error('Mssql column ' + name + ' type ' + metadata.data_type + ' has no correspondent property type');
+      throw new Error('Mssql column ' + metadata.colum_name + ' type ' + metadata.data_type + ' has no correspondent property type');
   }
   if (metadata.is_nullable === 'NO') {
     property.required = true;
+  }
+  if (metadata.ref_column_name) {
+    property.references = metadata.ref_column_name;
   }
   return property;
 }
@@ -531,8 +530,8 @@ function postgresSetNull(property, name, schema) {
     'SET NOT NULL' : 'DROP NOT NULL');
 }
 
-function postgresToProperty(metadata, name) {
-  var property = {};
+function postgresToProperty(metadata) {
+  var property = {name: metadata.column_name};
   switch (metadata.data_type) {
     case 'integer':
     case 'text':
@@ -566,10 +565,13 @@ function postgresToProperty(metadata, name) {
       property.decimals = metadata.numeric_scale;
       break;
     default:
-      throw new Error('Postgres column ' + name + ' type ' + metadata.data_type + ' has no correspondent property type');
+      throw new Error('Postgres column ' + metadata.column_name + ' type ' + metadata.data_type + ' has no correspondent property type');
   }
   if (metadata.is_nullable === 'NO') {
     property.required = true;
+  }
+  if (metadata.ref_column_name) {
+    property.references = metadata.ref_column_name;
   }
   return property;
 }
@@ -629,7 +631,7 @@ function getFkConstraintInfo(constraint, order) {
   return constraintInfo;
 }
 
-function getReferenceTableName($ref) {
+function getReferencedTableName($ref) {
   const re = /^\#\/definitions\/(.*)/;
   var match = re.exec($ref);
   if (match) {

@@ -2,42 +2,22 @@
   "properties": {
     "NUMREF": {
       "type": "integer",
-      "required": true,
-      "schema": {
-        "$ref": "reffab",
-        "key": "NUMREF",
-        "position": 1
-      }
+      "required": true
     },
     "NUMCAT": {
       "type": "string",
       "maxLength": 20,
-      "required": true,
-      "schema": {
-        "$ref": "reffab",
-        "key": "NUMCAT",
-        "position": 2
-      }
+      "required": true
     },
     "MODEL": {
       "type": "string",
       "maxLength": 20,
-      "required": true,
-      "schema": {
-        "$ref": "reffab",
-        "key": "MODEL",
-        "position": 3
-      }
+      "required": true
     },
     "REF": {
       "type": "string",
       "maxLength": 50,
-      "required": true,
-      "schema": {
-        "$ref": "reffab",
-        "key": "REF",
-        "position": 4
-      }
+      "required": true
     },
     "SUPPLIER": {
       "type": "integer",
@@ -54,5 +34,13 @@
     "MODEL",
     "REF",
     "SUPPLIER"
-  ]
+  ],
+  "foreignKeys": {
+    "reffab": {
+      "NUMREF": "NUMREF",
+      "NUMCAT": "NUMCAT",
+      "MODEL": "MODEL",
+      "REF": "REF"
+    }
+  }
 }

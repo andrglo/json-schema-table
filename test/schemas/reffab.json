@@ -3,21 +3,11 @@
     "NUMCAT": {
       "type": "string",
       "maxLength": 20,
-      "required": true,
-      "schema": {
-        "$ref": "catalog",
-        "key": "NUMCAT",
-        "position": 1
-      }
+      "required": true
     },
     "NUMREF": {
       "type": "integer",
-      "required": true,
-      "schema": {
-        "$ref": "catalog",
-        "key": "NUMREF",
-        "position": 2
-      }
+      "required": true
     },
     "MODEL": {
       "type": "string",
@@ -48,5 +38,11 @@
       "REF",
       "ORIGINAL"
     ]
-  ]
+  ],
+  "foreignKeys": {
+    "catalog": {
+      "catnum": "NUMCAT",
+      "refnum": "NUMREF"
+    }
+  }
 }

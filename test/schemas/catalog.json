@@ -1,17 +1,17 @@
 {
   "properties": {
-    "NUMCAT": {
+    "catnum": {
       "type": "string",
       "maxLength": 20,
       "required": true
     },
-    "NUMREF": {
+    "refnum": {
       "type": "integer",
       "required": true
     }
   },
   "primaryKey": [
-    "NUMCAT",
-    "NUMREF"
+    "catnum",
+    "refnum"
   ]
 }
