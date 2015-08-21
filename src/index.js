@@ -135,10 +135,10 @@ function getDbMetadata(dialect, tableName, schema) {
               columns: constraint.columns
             });
             break;
-          case 'uq':
-            var uq = metadata.tablesWithUniqueKeys[constraint.table] =
+          case 'uk':
+            var uk = metadata.tablesWithUniqueKeys[constraint.table] =
               metadata.tablesWithUniqueKeys[constraint.table] || [];
-            uq.push(constraint.columns);
+            uk.push(constraint.columns);
             break;
         }
       });
@@ -596,41 +596,6 @@ function getSchemaPropertyName(schema, columnName) {
   return propertyName;
 }
 
-function getPkConstraintInfo(constraint, order) {
-  var properties = [];
-  const re = /^pk__.*?__(.*)/;
-  var match = re.exec(constraint);
-  if (match) {
-    properties = match[1].split('__');
-  }
-  return properties[order - 1];
-}
-
-function getUqConstraintInfo(constraint, order) {
-  var properties = [];
-  const re = /^uq__.*?__(.*)/;
-  var match = re.exec(constraint);
-  if (match) {
-    properties = match[1].split('__');
-  }
-  return {
-    name: properties[order - 1],
-    key: match[1]
-  };
-}
-
-function getFkConstraintInfo(constraint, order) {
-  var constraintInfo = {};
-  const re = /^fk__.*?__(.*)/;
-  var match = re.exec(constraint);
-  if (match) {
-    var info = match[1].split('__');
-    constraintInfo.referenceTable = info[0];
-    constraintInfo.referenceColumn = info[order];
-  }
-  return constraintInfo;
-}
-
 function getReferencedTableName($ref) {
   const re = /^\#\/definitions\/(.*)/;
   var match = re.exec($ref);
@@ -671,7 +636,7 @@ function buildPkConstraintName(tableName, primaryKey) {
 }
 
 function buildUniqueConstraintName(tableName, unique) {
-  var constraintName = 'UQ__' + tableName;
+  var constraintName = 'UK__' + tableName;
   unique.forEach(function(column) {
     constraintName += '__' + column;
   });
