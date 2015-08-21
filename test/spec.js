@@ -523,6 +523,26 @@ module.exports = function(db) {
           done(error);
         });
     });
+    it('should add unique key to client', function(done) {
+      modifiedClientSchema.unique = [['initials']];
+      var client = jsonSchemaTable('client', modifiedClientSchema, {db: db});
+      client.sync()
+        .then(function() {
+          return client.metadata()
+            .then(function(metadata) {
+              metadata.should.have.property('uniqueKeys');
+              expect(metadata.uniqueKeys).to.be.a('array');
+              expect(metadata.uniqueKeys.length).to.equal(1);
+              expect(metadata.uniqueKeys[0]).to.be.a('array');
+              expect(metadata.uniqueKeys[0].length).to.equal(1);
+              expect(metadata.uniqueKeys[0][0]).to.equal('initials');
+              done();
+            });
+        })
+        .catch(function(error) {
+          done(error);
+        });
+    });
     it('should alter person column name to text', function(done) {
       modifiedPersonSchema.properties.dateOfBirth.type = 'date';
       modifiedPersonSchema.properties.name.type = 'text';

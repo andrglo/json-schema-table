@@ -150,7 +150,6 @@ function getDbMetadata(dialect, tableName, schema) {
     })
     .then(function(recordset) {
       recordset.map(function(record) {
-        //var propertyName = getSchemaPropertyName(schema, record.column_name);
         metadata.columns[record.column_name] =
           dbToProperty(record);
       });
@@ -213,6 +212,7 @@ function alterTable(dialect, tableName, schema, metadata) {
 
   var commands = [];
   var primaryKey = [];
+  var unique = [];
   var delimiters = dialect.delimiters;
   _.forEach(schema.properties, function(property, name) {
 
@@ -224,6 +224,9 @@ function alterTable(dialect, tableName, schema, metadata) {
     if (property.primaryKey === true ||
       (schema.primaryKey && schema.primaryKey.indexOf(name) !== -1)) {
       primaryKey.push(fieldName);
+    }
+    if (property.unique === true) {
+      unique.push([fieldName]);
     }
 
     if (!metadata.columns[fieldName]) {
@@ -259,8 +262,25 @@ function alterTable(dialect, tableName, schema, metadata) {
         }).join(',') + ')');
     }
   }
-  //todo Modify unique constraints
-  //todo Implement multiple column reference
+
+  if (schema.unique) {
+    schema.unique.map(function(key) {
+      unique.push(utils.mapToColumnName(key, schema));
+    });
+  }
+  if (unique.length) {
+    unique.map(function(key) {
+      if (!uniqueKeyExists(key, metadata.tablesWithUniqueKeys[tableName])) {
+        commands.push('ALTER TABLE ' + wrap(tableName, delimiters) + ' ADD CONSTRAINT '
+          + wrap(buildUniqueConstraintName(tableName, key), delimiters) + ' UNIQUE (' +
+          key.map(function(column) {
+            return wrap(column, delimiters);
+          }).join(',') + ')');
+
+      }
+    });
+  }
+
   return commands.join(';');
 
 }
@@ -328,7 +348,7 @@ function createTableReferences(dialect, tableName, schema, metadata) {
     }
 
     var hfk = false;
-    var hash = ($ref.foreignKey.join() + table + $ref.key.join('')).toLowerCase();
+    var hash = ($ref.foreignKey.join('') + table + $ref.key.join('')).toLowerCase();
     _.forEach(metadata.tablesWithForeignKeys[tableName], function(fk) {
       var fkHash =
         (fk.columns.reduce(function(columns, column) {
@@ -585,17 +605,6 @@ function checkTableStructure(dialect, tableName, schema, metadata) {
   return command.length === 0 ? Promise.resolve() : dialect.db.execute(command);
 }
 
-function getSchemaPropertyName(schema, columnName) {
-  var propertyName = columnName;
-  _.forEach(schema.properties, function(property, name) {
-    if (property.field === columnName) {
-      propertyName = name;
-      return false;
-    }
-  });
-  return propertyName;
-}
-
 function getReferencedTableName($ref) {
   const re = /^\#\/definitions\/(.*)/;
   var match = re.exec($ref);
@@ -641,6 +650,22 @@ function buildUniqueConstraintName(tableName, unique) {
     constraintName += '__' + column;
   });
   return constraintName;
+}
+
+function uniqueKeyExists(key, existentKeys) {
+ log('key', key, 'existent', existentKeys);
+  var found = false;
+  var hash = (key.join('')).toLowerCase();
+  _.forEach(existentKeys, function(uk) {
+    var ukHash = (uk.reduce(function(columns, column) {
+        return columns + column.name;
+      }, '')).toLowerCase();
+    if (hash === ukHash) {
+      found = true;
+      return false;
+    }
+  });
+  return found;
 }
 
 function wrap(name, delimiters) {
