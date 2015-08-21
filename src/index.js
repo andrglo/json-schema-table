@@ -653,13 +653,12 @@ function buildUniqueConstraintName(tableName, unique) {
 }
 
 function uniqueKeyExists(key, existentKeys) {
- log('key', key, 'existent', existentKeys);
   var found = false;
   var hash = (key.join('')).toLowerCase();
   _.forEach(existentKeys, function(uk) {
     var ukHash = (uk.reduce(function(columns, column) {
-        return columns + column.name;
-      }, '')).toLowerCase();
+      return columns + column.name;
+    }, '')).toLowerCase();
     if (hash === ukHash) {
       found = true;
       return false;
