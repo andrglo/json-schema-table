@@ -30,7 +30,7 @@
     "gulp-nsp": "^0.4.5",
     "gulp-util": "^3.0.6",
     "mssql": "^2.1.8",
-    "pg-promise": "^1.8.5",
+    "pg": "^4.4.1",
     "pretty-hrtime": "^1.0.0"
   },
   "scripts": {

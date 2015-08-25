@@ -515,7 +515,7 @@ function propertyToPostgres(property, name, schema, isAlter) {
       }
       break;
     case 'number':
-      if (property.decimals) {
+      if (property.decimals && property.decimals > 0) {
         column = 'NUMERIC(' + property.maxLength + ',' + property.decimals + ')';
       } else {
         column = 'INTEGER';
@@ -680,11 +680,24 @@ function postgresDbConnector(db) {
   return {
     execute: function(command) {
       //log('execute', command);
-      return db.none(command);
+      return this.query(command);
     },
     query: function(command) {
       //log('query', command);
-      return db.query(command);
+      return new Promise(function(resolve, reject) {
+        db.connect(function(err, client, done) {
+          if (err) return reject(err);
+          client.query(command, function(err, result) {
+            if (err) {
+              done();
+              reject(err);
+              return;
+            }
+            done();
+            resolve(result.rows);
+          });
+        });
+      });
     }
   };
 }
@@ -711,7 +724,7 @@ function isNodeMssql(db) {
 }
 
 function isPostgres(db) {
-  return db.oneOrNone !== void 0; //todo identify in a better way
+  return typeof db.defaults === 'object'; //todo identify in a better way
 }
 
 function wrapError(error, tableName) {
