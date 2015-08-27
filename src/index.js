@@ -569,6 +569,7 @@ function postgresToProperty(metadata) {
       property.type = 'datetime';
       property.timezone = 'ignore';
       break;
+    case 'timestamp without time zone':
     case 'timestamp with time zone':
       property.type = 'datetime';
       break;
