@@ -71,10 +71,11 @@ function checkForeignKey(fks, columns, refTable, refTableColumns) {
   expect(found).to.equal(true, 'Foreign key ' + columns.join() + ' don\'t have a correspondent key');
 }
 
-module.exports = function(db) {
-
+module.exports = function(options) {
+  var db;
   describe('table with no references', function() {
     it('should not sync person before its created', function(done) {
+      db = options.db;
       var person = jsonSchemaTable('person', personSchema, {db: db});
       person.sync()
         .then(function() {

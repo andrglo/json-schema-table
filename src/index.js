@@ -10,17 +10,15 @@ var log = console.log;
 
 function jsonSchemaTable(tableName, schema, config) {
   config = config || {};
-  assert(config.db, 'Database connector not informed, should be one of: mssql or pg-promise');
+  assert(config.db, 'Database connector not informed, should be one of: ' +
+    'mssql-cr-layer or pg-cr-layer');
   var dialect = {
-    name: whichDialect(config.db)
+    db: config.db
   };
-  dialect.db = getDriverAbstractionLayer(dialect.name, config.db);
-  if (dialect.name === 'mssql') {
+  if (config.db.dialect === 'mssql') {
     dialect.propertyToDb = propertyToMssql;
-    dialect.delimiters = '[]';
   } else {
     dialect.propertyToDb = propertyToPostgres;
-    dialect.delimiters = '""';
   }
   return {
     create: function() {
@@ -88,7 +86,7 @@ function jsonSchemaTable(tableName, schema, config) {
 }
 
 function getDbMetadata(dialect, tableName, schema) {
-  var dbToProperty = dialect.name === 'mssql' ? mssqlToProperty : postgresToProperty;
+  var dbToProperty = dialect.db.dialect === 'mssql' ? mssqlToProperty : postgresToProperty;
   var metadata = {
     tablesWithPrimaryKey: {},
     tablesWithUniqueKeys: {},
@@ -163,14 +161,13 @@ function createTable(dialect, tableName, schema) {
   var primaryKey = utils.mapToColumnName(schema.primaryKey, schema) || [];
   var primaryKeyDefined = primaryKey.length > 0;
   var unique = [];
-  var delimiters = dialect.delimiters;
   _.forEach(schema.properties, function(property, name) {
     var fieldName = property.field || name;
     var fieldType = dialect.propertyToDb(property, name, schema);
     if (fieldType === void 0) {
       return;
     }
-    columns.push(wrap(fieldName, delimiters) + ' ' + fieldType);
+    columns.push(dialect.db.wrap(fieldName) + ' ' + fieldType);
     if (primaryKeyDefined === false && property.primaryKey === true) {
       primaryKey.push(fieldName);
     }
@@ -179,9 +176,9 @@ function createTable(dialect, tableName, schema) {
     }
   });
   if (primaryKey.length) {
-    columns.push('CONSTRAINT ' + wrap(buildPkConstraintName(tableName, primaryKey), delimiters) +
+    columns.push('CONSTRAINT ' + dialect.db.wrap(buildPkConstraintName(tableName, primaryKey)) +
       ' PRIMARY KEY (' + primaryKey.map(function(column) {
-        return wrap(column, delimiters);
+        return dialect.db.wrap(column);
       }).join(',') + ')');
   }
 
@@ -192,14 +189,14 @@ function createTable(dialect, tableName, schema) {
   }
   if (unique.length) {
     unique.map(function(group) {
-      columns.push('CONSTRAINT ' + wrap(buildUniqueConstraintName(tableName, group), delimiters) +
+      columns.push('CONSTRAINT ' + dialect.db.wrap(buildUniqueConstraintName(tableName, group)) +
         ' UNIQUE (' + group.map(function(column) {
-          return wrap(column, delimiters);
+          return dialect.db.wrap(column);
         }).join(',') + ')');
     });
   }
 
-  return dialect.name === 'mssql' ?
+  return dialect.db.dialect === 'mssql' ?
   'IF (NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE ' +
   'TABLE_SCHEMA = \'dbo\' AND  TABLE_NAME = \'' + tableName + '\')) ' +
   'CREATE TABLE [' + tableName + '] (' + columns.join(',') + ')' :
@@ -213,7 +210,6 @@ function alterTable(dialect, tableName, schema, metadata) {
   var commands = [];
   var primaryKey = [];
   var unique = [];
-  var delimiters = dialect.delimiters;
   _.forEach(schema.properties, function(property, name) {
 
     var fieldName = property.field || name;
@@ -230,15 +226,15 @@ function alterTable(dialect, tableName, schema, metadata) {
     }
 
     if (!metadata.columns[fieldName]) {
-      commands.push('ALTER TABLE ' + wrap(tableName, delimiters) + ' ADD '
-        + wrap(fieldName, delimiters) + ' ' + dialect.propertyToDb(property, name, schema));
+      commands.push('ALTER TABLE ' + dialect.db.wrap(tableName) + ' ADD '
+        + dialect.db.wrap(fieldName) + ' ' + dialect.propertyToDb(property, name, schema));
     } else if (!equalDefinitions(metadata.columns[fieldName], property)) {
       if (canAlterColumn(metadata.columns[fieldName], property)) {
-        commands.push('ALTER TABLE ' + wrap(tableName, delimiters) + ' ALTER COLUMN '
-          + wrap(fieldName, delimiters) + ' ' + fieldType);
+        commands.push('ALTER TABLE ' + dialect.db.wrap(tableName) + ' ALTER COLUMN '
+          + dialect.db.wrap(fieldName) + ' ' + fieldType);
         if (dialect.name === 'postgres') {
-          commands.push('ALTER TABLE ' + wrap(tableName, delimiters) + ' ALTER COLUMN '
-            + wrap(fieldName, delimiters) + ' ' + postgresSetNull(property, name, schema));
+          commands.push('ALTER TABLE ' + dialect.db.wrap(tableName) + ' ALTER COLUMN '
+            + dialect.db.wrap(fieldName) + ' ' + postgresSetNull(property, name, schema));
         }
       } else {
         throw new Error('Column ' + fieldName + ' cannot be modified');
@@ -251,14 +247,14 @@ function alterTable(dialect, tableName, schema, metadata) {
     }) : [];
   if (_.difference(primaryKey, oldPrimaryKey).length) {
     if (oldPrimaryKey.length) {
-      commands.push('ALTER TABLE ' + wrap(tableName, delimiters) + ' DROP CONSTRAINT '
-        + wrap(buildPkConstraintName(tableName, oldPrimaryKey), delimiters));
+      commands.push('ALTER TABLE ' + dialect.db.wrap(tableName) + ' DROP CONSTRAINT '
+        + dialect.db.wrap(buildPkConstraintName(tableName, oldPrimaryKey)));
     }
     if (primaryKey.length) {
-      commands.push('ALTER TABLE ' + wrap(tableName, delimiters) + ' ADD CONSTRAINT '
-        + wrap(buildPkConstraintName(tableName, primaryKey), delimiters) + ' PRIMARY KEY (' +
+      commands.push('ALTER TABLE ' + dialect.db.wrap(tableName) + ' ADD CONSTRAINT '
+        + dialect.db.wrap(buildPkConstraintName(tableName, primaryKey)) + ' PRIMARY KEY (' +
         primaryKey.map(function(column) {
-          return wrap(column, delimiters);
+          return dialect.db.wrap(column);
         }).join(',') + ')');
     }
   }
@@ -271,10 +267,10 @@ function alterTable(dialect, tableName, schema, metadata) {
   if (unique.length) {
     unique.map(function(key) {
       if (!uniqueKeyExists(key, metadata.tablesWithUniqueKeys[tableName])) {
-        commands.push('ALTER TABLE ' + wrap(tableName, delimiters) + ' ADD CONSTRAINT '
-          + wrap(buildUniqueConstraintName(tableName, key), delimiters) + ' UNIQUE (' +
+        commands.push('ALTER TABLE ' + dialect.db.wrap(tableName) + ' ADD CONSTRAINT '
+          + dialect.db.wrap(buildUniqueConstraintName(tableName, key)) + ' UNIQUE (' +
           key.map(function(column) {
-            return wrap(column, delimiters);
+            return dialect.db.wrap(column);
           }).join(',') + ')');
 
       }
@@ -288,7 +284,6 @@ function alterTable(dialect, tableName, schema, metadata) {
 function createTableReferences(dialect, tableName, schema, metadata) {
 
   var commands = [];
-  var delimiters = dialect.delimiters;
 
   var $refs = [];
   _.forEach(schema.properties, function(property, name) {
@@ -370,20 +365,20 @@ function createTableReferences(dialect, tableName, schema, metadata) {
           var property = candidateKey.reduce(function(result, key) {
             return result || (key.name === $ref.key[index] && key);
           }, void 0);
-          commands.push('ALTER TABLE ' + wrap(tableName, delimiters) + ' ADD ' +
-            wrap(foreignKey, delimiters) + ' ' +
+          commands.push('ALTER TABLE ' + dialect.db.wrap(tableName) + ' ADD ' +
+            dialect.db.wrap(foreignKey) + ' ' +
             dialect.propertyToDb(property, foreignKey));
         }
       });
 
       var constraintName = 'FK__' + tableName + '__' + $ref.foreignKey.join('__');
-      commands.push('ALTER TABLE ' + wrap(tableName, delimiters) +
-        ' ADD CONSTRAINT ' + wrap(constraintName, delimiters) + ' FOREIGN KEY (' +
+      commands.push('ALTER TABLE ' + dialect.db.wrap(tableName) +
+        ' ADD CONSTRAINT ' + dialect.db.wrap(constraintName) + ' FOREIGN KEY (' +
         $ref.foreignKey.map(function(column) {
-          return wrap(column, delimiters);
-        }).join(',') + ') REFERENCES ' + wrap(table, delimiters) +
+          return dialect.db.wrap(column);
+        }).join(',') + ') REFERENCES ' + dialect.db.wrap(table) +
         ' (' + $ref.key.map(function(column) {
-          return wrap(column, delimiters);
+          return dialect.db.wrap(column);
         }).join(',') + ')');
     }
 
@@ -666,66 +661,6 @@ function uniqueKeyExists(key, existentKeys) {
     }
   });
   return found;
-}
-
-function wrap(name, delimiters) {
-  return delimiters[0] + name + delimiters[1];
-}
-
-function getDriverAbstractionLayer(dialect, db) {
-  assert(dialect, 'Dialect "' + dialect + '" not supported');
-  return dialect === 'postgres' ? postgresDbConnector(db) : mssqlDbConnector(db);
-}
-
-function postgresDbConnector(db) {
-  return {
-    execute: function(command) {
-      //log('execute', command);
-      return this.query(command);
-    },
-    query: function(command) {
-      //log('query', command);
-      return new Promise(function(resolve, reject) {
-        db.connect(function(err, client, done) {
-          if (err) return reject(err);
-          client.query(command, function(err, result) {
-            if (err) {
-              done();
-              reject(err);
-              return;
-            }
-            done();
-            resolve(result.rows);
-          });
-        });
-      });
-    }
-  };
-}
-
-function mssqlDbConnector(db) {
-  return {
-    execute: function(command) {
-      //log('execute', command);
-      return (new db.Request()).batch(command);
-    },
-    query: function(command) {
-      //log('query', command);
-      return (new db.Request()).query(command);
-    }
-  };
-}
-
-function whichDialect(db) {
-  return isNodeMssql(db) ? 'mssql' : isPostgres(db) ? 'postgres' : void 0;
-}
-
-function isNodeMssql(db) {
-  return db.DRIVERS !== void 0; //todo identify in a better way
-}
-
-function isPostgres(db) {
-  return typeof db.defaults === 'object'; //todo identify in a better way
 }
 
 function wrapError(error, tableName) {

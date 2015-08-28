@@ -1,91 +1,94 @@
-var pg = require('pg');
-var mssql = require('mssql');
 var spec = require('./spec');
 var gutil = require('gulp-util');
 var pretty = require('pretty-hrtime');
+var PgCrLayer = require('pg-cr-layer');
+var MssqlCrLayer = require('mssql-cr-layer');
 
-var databaseName = 'json-schema-table';
+var pgConfig = {
+  user: process.env.POSTGRES_USER || 'postgres',
+  password: process.env.POSTGRES_PASSWORD,
+  database: 'postgres',
+  host: process.env.POSTGRES_HOST || 'localhost',
+  port: process.env.POSTGRES_PORT || 5432,
+  pool: {
+    max: 10,
+    idleTimeout: 30000
+  }
+};
+var pg = new PgCrLayer(pgConfig);
 
 var mssqlConfig = {
   user: process.env.MSSQL_USER,
   password: process.env.MSSQL_PASSWORD,
-  server: process.env.MSSQL_HOST,
+  database: 'master',
+  host: process.env.MSSQL_HOST || 'localhost',
+  port: process.env.MSSQL_PORT || 1433,
   pool: {
     max: 10,
-    min: 0,
-    idleTimeoutMillis: 30000
+    idleTimeout: 30000
   }
 };
+var mssql = new MssqlCrLayer(mssqlConfig);
 
-pg.defaults.user = process.env.POSTGRES_USER || 'postgres';
-pg.defaults.database = 'postgres';
-pg.defaults.password = process.env.POSTGRES_PASSWORD;
-pg.defaults.port = process.env.POSTGRES_PORT || 5432;
-pg.defaults.host = process.env.POSTGRES_HOST || 'localhost';
-pg.defaults.poolSize = 25;
-pg.defaults.poolIdleTimeout = 30000;
+var databaseName = 'json-schema-table';
 
 function createPostgresDb() {
   var dbName = process.env.POSTGRES_DATABASE || databaseName;
-  return new Promise(function(resolve, reject) {
-    pg.connect(function(err, client, done) {
-      if (err) return reject(err);
-      client.query('DROP DATABASE IF EXISTS "' + dbName + '";', function(err, result) {
-        if (err) {
-          done();
-          reject(err);
-          return;
-        }
-        client.query('CREATE DATABASE "' + dbName + '"', function(err, result) {
-          if (err) {
-            done();
-            reject(err);
-            return;
-          }
-          done();
-          resolve();
-        });
-      });
+  return pg.execute(
+    'DROP DATABASE IF EXISTS "' + dbName + '";')
+    .then(function() {
+      return pg.execute('CREATE DATABASE "' + dbName + '"');
     });
-  });
 }
 
 function createMssqlDb() {
   var dbName = process.env.MSSQL_DATABASE || databaseName;
-  return (new mssql.Request()).batch(
+  return mssql.execute(
     'IF EXISTS(select * from sys.databases where name=\'' +
     dbName + '\') DROP DATABASE [' + dbName + '];' +
     'CREATE DATABASE [' + dbName + '];'
   );
 }
 
+var pgOptions = {};
+var mssqlOptions = {};
+
 before(function(done) {
-  if (process.env.CI) {
-    return createPostgresDb()
-      .then(function() {
-        pg.defaults.database = process.env.POSTGRES_DATABASE || databaseName;
-        done();
-      })
-      .catch(function(error) {
-        done(error);
-      });
-  }
-  mssql.connect(mssqlConfig)
+  return pg.connect()
     .then(function() {
-      return createMssqlDb()
+      return createPostgresDb()
         .then(function() {
-          return mssql.close();
+          gutil.log('Postgres db created');
+          return pg.close();
         })
         .then(function() {
-          mssqlConfig.database = process.env.MSSQL_DATABASE || databaseName;
-          return mssql.connect(mssqlConfig);
+          gutil.log('Postgres db creation connection closed');
+          pgConfig.database = process.env.POSTGRES_DATABASE || databaseName;
+          gutil.log('Postgres will connect to', pgConfig.database);
+          pgOptions.db = new PgCrLayer(pgConfig);
+          return pgOptions.db.connect();
         });
     })
     .then(function() {
-      return createPostgresDb();
+      if (!process.env.CI) {
+        return mssql.connect()
+          .then(function() {
+            return createMssqlDb()
+              .then(function() {
+                gutil.log('Mssql db created');
+                return mssql.close();
+              })
+              .then(function() {
+                gutil.log('Mssql db creation connection closed');
+                mssqlConfig.database = process.env.MSSQL_DATABASE || databaseName;
+                gutil.log('Mssql will connect to', mssqlConfig.database);
+                mssqlOptions.db = new MssqlCrLayer(mssqlConfig);
+                return mssqlOptions.db.connect();
+              });
+          });
+      }
     })
     .then(function() {
-      pg.defaults.database = process.env.POSTGRES_DATABASE || databaseName;
       done();
     })
     .catch(function(error) {
@@ -98,7 +101,7 @@ describe('postgres', function() {
   before(function() {
     duration = process.hrtime();
   });
-  spec(pg);
+  spec(pgOptions);
   after(function() {
     duration = process.hrtime(duration);
     gutil.log('Postgres finished after', gutil.colors.magenta(pretty(duration)));
@@ -113,7 +116,7 @@ describe('mssql', function() {
   before(function() {
     duration = process.hrtime();
   });
-  spec(mssql);
+  spec(mssqlOptions);
   after(function() {
     duration = process.hrtime(duration);
     gutil.log('Mssql finished after', gutil.colors.magenta(pretty(duration)));
@@ -122,7 +125,7 @@ describe('mssql', function() {
 
 after(function() {
   if (!process.env.CI) {
-    mssql.close();
+    mssqlOptions.db.close();
   }
-  pg.end();
+  pgOptions.db.close();
 });
