@@ -30,7 +30,7 @@ function checkColumns(columns, schema) {
       expect(columns[columnName].maxLength).to.equal(undefined);
     } else if (property.type === 'date') {
       expect(columns[columnName].type === 'date' ||
-        columns[columnName].type === 'datetime').to.equal(true);
+        columns[columnName].type === 'date').to.equal(true);
       expect(columns[columnName].maxLength).to.equal(undefined);
     } else if (property.type === 'string' && property.maxLength === void 0) {
       expect(columns[columnName].type === 'text').to.equal(true);
@@ -140,7 +140,7 @@ module.exports = function(options) {
     it('should create client', function(done) {
       modifiedClientSchema = _.cloneDeep(clientSchema);
       delete modifiedClientSchema.properties.taxes;
-      var client = jsonSchemaTable('client', modifiedClientSchema, {db: db});
+      var client = jsonSchemaTable('client', modifiedClientSchema, {db: db, datetime: true});
       client.create()
         .then(function() {
           return client.metadata()
@@ -154,7 +154,7 @@ module.exports = function(options) {
               expect(metadata.columns).to.be.a('object');
               var createdSchema = _.extend({}, modifiedClientSchema);
               createdSchema.properties = _.pick(modifiedClientSchema.properties, [
-                'id', 'initials', 'sales', 'debt'
+                'id', 'initials', 'sales', 'debt', 'lastSale'
               ]);
               checkColumns(metadata.columns, createdSchema);
               done();

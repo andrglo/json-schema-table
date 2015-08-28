@@ -16,6 +16,7 @@ function jsonSchemaTable(tableName, schema, config) {
     db: config.db
   };
   if (config.db.dialect === 'mssql') {
+    dialect.datetime = config.datetime;
     dialect.propertyToDb = propertyToMssql;
   } else {
     dialect.propertyToDb = propertyToPostgres;
@@ -406,8 +407,14 @@ function propertyToMssql(property, name, schema) {
       column = 'NVARCHAR(' + (property.maxLength ? property.maxLength : 'MAX') + ')';
       break;
     case 'date':
+      column = 'DATE';
+      break;
     case 'datetime':
-      column = 'DATETIME2';
+      if (property.timezone === 'ignore') {
+        column = this.datetime === true ? 'DATETIME' : 'DATETIME2';
+      } else {
+        column = 'DATETIMEOFFSET';
+      }
       break;
     case 'number':
       if (property.decimals) {
@@ -450,8 +457,12 @@ function mssqlToProperty(metadata) {
     case 'varbinary':
       property.type = 'blob';
       break;
+    case 'date':
+      property.type = 'date';
+      break;
     case 'datetime':
     case 'datetime2':
+    case 'datetimeoffset':
       property.type = 'datetime';
       break;
     case 'decimal':

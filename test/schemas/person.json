@@ -31,6 +31,10 @@
       "type": "date"
     },
     "momentOfBirth": {
+      "type": "datetime",
+      "timezone": "ignore"
+    },
+    "momentOfBirthWithZone": {
       "type": "datetime"
     }
   },
