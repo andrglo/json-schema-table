@@ -103,25 +103,29 @@ module.exports = function(options) {
 
               metadata.should.have.property('uniqueKeys');
               expect(metadata.uniqueKeys).to.be.a('array');
-              expect(metadata.uniqueKeys.length).to.equal(2);
-              expect(metadata.uniqueKeys[0]).to.be.a('array');
-              expect(metadata.uniqueKeys[0].length).to.equal(1);
-              expect(metadata.uniqueKeys[0][0]).to.equal('fieldName');
-
-              expect(metadata.uniqueKeys[1]).to.be.a('array');
-              expect(metadata.uniqueKeys[1].length).to.equal(2);
-              expect(metadata.uniqueKeys[1][0]).to.equal('state');
-              expect(metadata.uniqueKeys[1][1]).to.equal('dateOfBirth');
-
+              expect(metadata.uniqueKeys.length).to.equal(3);
+              metadata.uniqueKeys.forEach(function(uk) {
+                if (uk.length === 1) {
+                  expect(uk[0]).to.equal('fieldName');
+                } else if (uk.length === 2) {
+                  expect(uk[0]).to.equal('state');
+                  expect(uk[1]).to.equal('dateOfBirth');
+                }
+                else if (uk.length === 3) {
+                  expect(uk[0]).to.equal('fieldName');
+                  expect(uk[1]).to.equal('state');
+                  expect(uk[2]).to.equal('momentOfBirth');
+                } else {
+                  throw new Error('Invalid unique key');
+                }
+              });
               metadata.should.have.property('columns');
               expect(metadata.columns).to.be.a('object');
               checkColumns(metadata.columns, personSchema);
               done();
             });
         })
-        .catch(function(error) {
-          done(error);
-        });
+        .catch(done);
     });
     it('should not create client due property with type array', function(done) {
       var client = jsonSchemaTable('client', clientSchema, {db: db});
@@ -140,7 +144,10 @@ module.exports = function(options) {
     it('should create client', function(done) {
       modifiedClientSchema = _.cloneDeep(clientSchema);
       delete modifiedClientSchema.properties.taxes;
-      var client = jsonSchemaTable('client', modifiedClientSchema, {db: db, datetime: true});
+      var client = jsonSchemaTable('client', modifiedClientSchema, {
+        db: db,
+        datetime: true
+      });
       client.create()
         .then(function() {
           return client.metadata()

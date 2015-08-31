@@ -5,7 +5,7 @@ var utils = require('./utils');
 
 module.exports = jsonSchemaTable;
 
-var log = console.log;
+//var log = console.log;
 //var log = function() {};
 
 function jsonSchemaTable(tableName, schema, config) {
@@ -33,7 +33,7 @@ function jsonSchemaTable(tableName, schema, config) {
         });
     },
     sync: function() {
-      return getDbMetadata(dialect, tableName, schema)
+      return getDbMetadata(dialect, tableName)
         .then(function(metadata) {
           if (!tableExists(metadata)) {
             throw new Error('All tables should be created first');
@@ -49,7 +49,7 @@ function jsonSchemaTable(tableName, schema, config) {
         });
     },
     metadata: function() {
-      return getDbMetadata(dialect, tableName, schema)
+      return getDbMetadata(dialect, tableName)
         .then(function(metadata) {
           var tableMetadata = {columns: metadata.columns};
           var primaryKey = metadata.tablesWithPrimaryKey[tableName];
@@ -86,7 +86,7 @@ function jsonSchemaTable(tableName, schema, config) {
   };
 }
 
-function getDbMetadata(dialect, tableName, schema) {
+function getDbMetadata(dialect, tableName) {
   var dbToProperty = dialect.db.dialect === 'mssql' ? mssqlToProperty : postgresToProperty;
   var metadata = {
     tablesWithPrimaryKey: {},

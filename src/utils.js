@@ -1,7 +1,5 @@
 var _ = require('lodash');
 
-exports.findProperty = findProperty;
-
 function findProperty(name, properties) {
   var property = properties[name];
   if (property === void 0) {
@@ -16,17 +14,6 @@ function findProperty(name, properties) {
     }
   }
   return property;
-}
-
-exports.isInUniqueProperty = isInUniqueProperty;
-
-function isInUniqueProperty(column, schema) {
-  for (var i = 0; schema.unique && i < schema.unique.length; i++) {
-    if (isInArray(column, schema.unique[i], schema)) {
-      return true;
-    }
-  }
-  return false;
 }
 
 exports.isInArray = isInArray;

@@ -16,14 +16,14 @@ $ npm install --save json-schema-table
 
 ```js
 var jsonSchemaTable = require('json-schema-table');
-var pgPromise = require('pg-promise');
+var pg = require('pg-cr-layer');
 var studentSchema = require('./student.json');
 var classSchema = require('./class.json');
 
 // initialize and connect to a database
 
-var studentTable = jsonSchemaTable('person', studentSchema, {db: pgPromise});
-var classTable = jsonSchemaTable('student', classSchema, {db: pgPromise});
+var studentTable = jsonSchemaTable('person', studentSchema, {db: pg});
+var classTable = jsonSchemaTable('student', classSchema, {db: pg});
 
 // First create then sync to build the references
 studentTable.create().then(function() {
@@ -36,37 +36,11 @@ studentTable.create().then(function() {
 	console.log(error);
 });
 ```
- For the db connection you can use [mssql](https://github.com/patriksimek/node-mssql)
- or [pg-promise](https://github.com/vitaly-t/pg-promise)
+ For the db connection you can use [mssql-cr-layer](https://github.com/andrglo/mssql-cr-layer)
+ or [pg-cr-layer](https://github.com/andrglo/pg-cr-layer)
  
  To more details take a look at the tests
  
-## Tests
-
-The tests were executed using SQL Server 2014 and Postgres 9.4.
-The coverage badge don't include the SQL Server tests, the actual
-coverage is 95.45%
-
-```
---------------------|----------|----------|----------|----------|----------------|
-File                |  % Stmts | % Branch |  % Funcs |  % Lines |Uncovered Lines |
---------------------|----------|----------|----------|----------|----------------|
- json-schema-table/ |    95.45 |    88.42 |      100 |    95.45 |                |
-  index.js          |    95.45 |    88.42 |      100 |    95.45 |... 344,358,400 |
---------------------|----------|----------|----------|----------|----------------|
-All files           |    95.45 |    88.42 |      100 |    95.45 |                |
---------------------|----------|----------|----------|----------|----------------|
-
-
-=============================== Coverage summary ===============================
-Statements   : 95.45% ( 252/264 )
-Branches     : 88.42% ( 168/190 )
-Functions    : 100% ( 51/51 )
-Lines        : 95.45% ( 252/264 )
-================================================================================
-```
-
-
 ## License
 
 MIT © [Andre Gloria](andrglo.com)
