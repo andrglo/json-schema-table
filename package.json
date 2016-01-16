@@ -21,17 +21,17 @@
     "mssql"
   ],
   "devDependencies": {
-    "chai": "^3.2.0",
-    "gulp": "^3.6.0",
-    "gulp-coveralls": "^0.1.0",
-    "gulp-eslint": "^0.15.0",
-    "gulp-istanbul": "^0.9.0",
-    "gulp-mocha": "^2.0.0",
-    "gulp-nsp": "^2.1.0",
-    "gulp-util": "^3.0.6",
-    "mssql-cr-layer": "^1.0.1",
-    "pg-cr-layer": "^1.0.0",
-    "pretty-hrtime": "^1.0.0"
+    "chai": "^3.4.1",
+    "gulp": "^3.9.0",
+    "gulp-coveralls": "^0.1.4",
+    "gulp-eslint": "^1.1.1",
+    "gulp-istanbul": "^0.10.3",
+    "gulp-mocha": "^2.2.0",
+    "gulp-nsp": "^2.3.0",
+    "gulp-util": "^3.0.7",
+    "mssql-cr-layer": "^1.0.2",
+    "pg-cr-layer": "^1.0.1",
+    "pretty-hrtime": "^1.0.1"
   },
   "scripts": {
     "prepublish": "gulp prepublish",

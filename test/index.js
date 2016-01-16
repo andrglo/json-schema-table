@@ -30,28 +30,35 @@ var mssqlConfig = {
 };
 var mssql = new MssqlCrLayer(mssqlConfig);
 
-var databaseName = 'test-json-schema-table';
+var databaseName = process.env.POSTGRES_DATABASE || 'test-json-schema-table';
 
 function createPostgresDb() {
-  var dbName = process.env.POSTGRES_DATABASE || databaseName;
   return pg.execute(
-    'DROP DATABASE IF EXISTS "' + dbName + '";')
+    'DROP DATABASE IF EXISTS "' + databaseName + '";')
     .then(function() {
-      return pg.execute('CREATE DATABASE "' + dbName + '"');
+      return pg.execute('CREATE DATABASE "' + databaseName + '"');
+    })
+    .then(function() {
+      return pg.execute('DROP DATABASE IF EXISTS "' + databaseName + '2";');
+    })
+    .then(function() {
+      return pg.execute('CREATE DATABASE "' + databaseName + '2"');
     });
 }
 
 function createMssqlDb() {
-  var dbName = process.env.MSSQL_DATABASE || databaseName;
   return mssql.execute(
     'IF EXISTS(select * from sys.databases where name=\'' +
-    dbName + '\') DROP DATABASE [' + dbName + '];' +
-    'CREATE DATABASE [' + dbName + '];'
+    databaseName + '\') DROP DATABASE [' + databaseName + '];' +
+    'CREATE DATABASE [' + databaseName + '];' +
+    'IF EXISTS(select * from sys.databases where name=\'' +
+    databaseName + '2\') DROP DATABASE [' + databaseName + '2];' +
+    'CREATE DATABASE [' + databaseName + '2];'
   );
 }
 
-var pgOptions = {};
-var mssqlOptions = {};
+var pgOptions = {database: databaseName};
+var mssqlOptions = {database: databaseName};
 
 before(function(done) {
   return pg.connect()
@@ -63,10 +70,9 @@ before(function(done) {
         })
         .then(function() {
           gutil.log('Postgres db creation connection closed');
-          pgConfig.database = process.env.POSTGRES_DATABASE || databaseName;
+          pgConfig.database = databaseName;
           gutil.log('Postgres will connect to', pgConfig.database);
           pgOptions.db = new PgCrLayer(pgConfig);
-          return pgOptions.db.connect();
         });
     })
     .then(function() {
@@ -80,10 +86,9 @@ before(function(done) {
               })
               .then(function() {
                 gutil.log('Mssql db creation connection closed');
-                mssqlConfig.database = process.env.MSSQL_DATABASE || databaseName;
+                mssqlConfig.database = databaseName;
                 gutil.log('Mssql will connect to', mssqlConfig.database);
                 mssqlOptions.db = new MssqlCrLayer(mssqlConfig);
-                return mssqlOptions.db.connect();
               });
           });
       }

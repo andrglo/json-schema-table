@@ -73,251 +73,254 @@ function checkForeignKey(fks, columns, refTable, refTableColumns) {
 
 module.exports = function(options) {
   var db;
-  describe('table with no references', function() {
-    it('should not sync person before its created', function(done) {
-      db = options.db;
-      var person = jsonSchemaTable('person', personSchema, {db: db});
-      person.sync()
-        .then(function() {
-          done(new Error('Invalid table synced'));
-        })
-        .catch(function(error) {
-          expect(error.message.indexOf('tables should be created first') !== -1).to.equal(true);
-          done();
-        })
-        .catch(function(error) {
-          done(error);
-        });
-    });
-    it('should create person', function(done) {
-      var person = jsonSchemaTable('person', personSchema, {db: db});
-      person.create()
-        .then(function() {
-          return person.metadata()
-            .then(function(metadata) {
-              metadata.should.not.have.property('foreignKeys');
-              metadata.should.have.property('primaryKey');
-              expect(metadata.primaryKey).to.be.a('array');
-              expect(metadata.primaryKey.length).to.equal(1);
-              expect(metadata.primaryKey[0]).to.equal('personId');
 
-              metadata.should.have.property('uniqueKeys');
-              expect(metadata.uniqueKeys).to.be.a('array');
-              expect(metadata.uniqueKeys.length).to.equal(3);
-              metadata.uniqueKeys.forEach(function(uk) {
-                if (uk.length === 1) {
-                  expect(uk[0]).to.equal('fieldName');
-                } else if (uk.length === 2) {
-                  expect(uk[0]).to.equal('state');
-                  expect(uk[1]).to.equal('dateOfBirth');
-                }
-                else if (uk.length === 3) {
-                  expect(uk[0]).to.equal('fieldName');
-                  expect(uk[1]).to.equal('state');
-                  expect(uk[2]).to.equal('momentOfBirth');
-                } else {
-                  throw new Error('Invalid unique key');
-                }
-              });
-              metadata.should.have.property('columns');
-              expect(metadata.columns).to.be.a('object');
-              checkColumns(metadata.columns, personSchema);
-              done();
-            });
-        })
-        .catch(done);
-    });
-    it('should not create client due property with type array', function(done) {
-      var client = jsonSchemaTable('client', clientSchema, {db: db});
-      client.create()
-        .then(function() {
-          done(new Error('Invalid table created'));
-        })
-        .catch(function(error) {
-          expect(error.message.indexOf('not yet implemented') !== -1).to.equal(true);
-          done();
-        })
-        .catch(function(error) {
-          done(error);
-        });
-    });
-    it('should create client', function(done) {
-      modifiedClientSchema = _.cloneDeep(clientSchema);
-      delete modifiedClientSchema.properties.taxes;
-      var client = jsonSchemaTable('client', modifiedClientSchema, {
-        db: db,
-        datetime: true
+  [options.database, options.database + '2'].map(function(database) {
+    describe(database + ' - table with no references', function() {
+      it('should not sync person before its created', function(done) {
+        db = options.db;
+        var person = jsonSchemaTable('person', personSchema, {db, database});
+        person.sync()
+          .then(function() {
+            done(new Error('Invalid table synced'));
+          })
+          .catch(function(error) {
+            expect(error.message.indexOf('tables should be created first') !== -1).to.equal(true);
+            done();
+          })
+          .catch(function(error) {
+            done(error);
+          });
       });
-      client.create()
-        .then(function() {
-          return client.metadata()
-            .then(function(metadata) {
-              metadata.should.not.have.property('foreignKeys');
-              metadata.should.have.property('primaryKey');
-              expect(metadata.primaryKey).to.be.a('array');
-              expect(metadata.primaryKey.length).to.equal(1);
-              expect(metadata.primaryKey[0]).to.equal('clientId');
-              metadata.should.have.property('columns');
-              expect(metadata.columns).to.be.a('object');
-              var createdSchema = _.extend({}, modifiedClientSchema);
-              createdSchema.properties = _.pick(modifiedClientSchema.properties, [
-                'id', 'initials', 'sales', 'debt', 'lastSale'
-              ]);
-              checkColumns(metadata.columns, createdSchema);
-              done();
-            });
-        })
-        .catch(function(error) {
-          done(error);
-        });
-    });
-    it('should create façade', function(done) {
-      var façade = jsonSchemaTable('façade', façadeSchema, {db: db});
-      façade.create()
-        .then(function() {
-          return façade.metadata()
-            .then(function(metadata) {
-              metadata.should.not.have.property('foreignKeys');
-              metadata.should.have.property('primaryKey');
-              expect(metadata.primaryKey).to.be.a('array');
-              expect(metadata.primaryKey.length).to.equal(1);
-              expect(metadata.primaryKey[0]).to.equal('Nome');
-              metadata.should.have.property('columns');
-              expect(metadata.columns).to.be.a('object');
-              checkColumns(metadata.columns, façadeSchema);
-              done();
-            });
-        })
-        .catch(function(error) {
-          done(error);
-        });
-    });
-    it('should create person façade', function(done) {
-      var personFaçade = jsonSchemaTable('personFaçade', personFaçadeSchema, {db: db});
-      personFaçade.create()
-        .then(function() {
-          return personFaçade.metadata()
-            .then(function(metadata) {
-              metadata.should.not.have.property('foreignKeys');
-              metadata.should.have.property('primaryKey');
-              expect(metadata.primaryKey).to.be.a('array');
-              expect(metadata.primaryKey.length).to.equal(2);
-              expect(metadata.primaryKey[0]).to.equal('person');
-              expect(metadata.primaryKey[1]).to.equal('XfaçadeX');
-              metadata.should.have.property('columns');
-              expect(metadata.columns).to.be.a('object');
-              checkColumns(metadata.columns, personFaçadeSchema);
-              done();
-            });
-        })
-        .catch(function(error) {
-          done(error);
-        });
-    });
-    it('should create person tax', function(done) {
-      var tax = jsonSchemaTable('tax', taxSchema, {db: db});
-      tax.create()
-        .then(function() {
-          return tax.metadata()
-            .then(function(metadata) {
-              metadata.should.not.have.property('foreignKeys');
-              metadata.should.have.property('primaryKey');
-              expect(metadata.primaryKey).to.be.a('array');
-              expect(metadata.primaryKey.length).to.equal(2);
-              expect(metadata.primaryKey[0]).to.equal('city');
-              expect(metadata.primaryKey[1]).to.equal('state');
-              metadata.should.have.property('columns');
-              expect(metadata.columns).to.be.a('object');
-              checkColumns(metadata.columns, taxSchema);
-              done();
-            });
-        })
-        .catch(function(error) {
-          done(error);
-        });
-    });
-    it('should create catalog', function(done) {
-      var catalog = jsonSchemaTable('catalog', catalogSchema, {db: db});
-      catalog.create()
-        .then(function() {
-          return catalog.metadata()
-            .then(function(metadata) {
-              metadata.should.not.have.property('foreignKeys');
-              metadata.should.have.property('primaryKey');
-              expect(metadata.primaryKey).to.be.a('array');
-              expect(metadata.primaryKey.length).to.equal(2);
-              expect(metadata.primaryKey[0]).to.equal('catnum');
-              expect(metadata.primaryKey[1]).to.equal('refnum');
-              metadata.should.have.property('columns');
-              expect(metadata.columns).to.be.a('object');
-              checkColumns(metadata.columns, catalogSchema);
-              done();
-            });
-        })
-        .catch(function(error) {
-          done(error);
-        });
-    });
-    it('should create reffab', function(done) {
-      var reffab = jsonSchemaTable('reffab', reffabSchema, {db: db});
-      reffab.create()
-        .then(function() {
-          return reffab.metadata()
-            .then(function(metadata) {
-              metadata.should.not.have.property('foreignKeys');
-              metadata.should.have.property('uniqueKeys');
-              expect(metadata.uniqueKeys).to.be.a('array');
-              expect(metadata.uniqueKeys.length).to.equal(3);
-              expect(metadata.uniqueKeys[0]).to.be.a('array');
-              expect(metadata.uniqueKeys[0].length).to.equal(4);
-              expect(metadata.uniqueKeys[0][0]).to.equal('NUMREF');
-              expect(metadata.uniqueKeys[0][1]).to.equal('NUMCAT');
-              expect(metadata.uniqueKeys[0][2]).to.equal('MODEL');
-              expect(metadata.uniqueKeys[0][3]).to.equal('REF');
+      it('should create person', function(done) {
+        var person = jsonSchemaTable('person', personSchema, {db, database});
+        person.create()
+          .then(function() {
+            return person.metadata()
+              .then(function(metadata) {
+                metadata.should.not.have.property('foreignKeys');
+                metadata.should.have.property('primaryKey');
+                expect(metadata.primaryKey).to.be.a('array');
+                expect(metadata.primaryKey.length).to.equal(1);
+                expect(metadata.primaryKey[0]).to.equal('personId');
 
-              expect(metadata.uniqueKeys[1]).to.be.a('array');
-              expect(metadata.uniqueKeys[1].length).to.equal(1);
-              expect(metadata.uniqueKeys[1][0]).to.equal('REF');
-
-              expect(metadata.uniqueKeys[2]).to.be.a('array');
-              expect(metadata.uniqueKeys[2].length).to.equal(2);
-              expect(metadata.uniqueKeys[2][0]).to.equal('REF');
-              expect(metadata.uniqueKeys[2][1]).to.equal('ORIGINAL');
-
-              metadata.should.have.property('columns');
-              expect(metadata.columns).to.be.a('object');
-              checkColumns(metadata.columns, reffabSchema);
-              done();
-            });
-        })
-        .catch(function(error) {
-          done(error);
+                metadata.should.have.property('uniqueKeys');
+                expect(metadata.uniqueKeys).to.be.a('array');
+                expect(metadata.uniqueKeys.length).to.equal(3);
+                metadata.uniqueKeys.forEach(function(uk) {
+                  if (uk.length === 1) {
+                    expect(uk[0]).to.equal('fieldName');
+                  } else if (uk.length === 2) {
+                    expect(uk[0]).to.equal('state');
+                    expect(uk[1]).to.equal('dateOfBirth');
+                  }
+                  else if (uk.length === 3) {
+                    expect(uk[0]).to.equal('fieldName');
+                    expect(uk[1]).to.equal('state');
+                    expect(uk[2]).to.equal('momentOfBirth');
+                  } else {
+                    throw new Error('Invalid unique key');
+                  }
+                });
+                metadata.should.have.property('columns');
+                expect(metadata.columns).to.be.a('object');
+                checkColumns(metadata.columns, personSchema);
+                done();
+              });
+          })
+          .catch(done);
+      });
+      it('should not create client due property with type array', function(done) {
+        var client = jsonSchemaTable('client', clientSchema, {db, database});
+        client.create()
+          .then(function() {
+            done(new Error('Invalid table created'));
+          })
+          .catch(function(error) {
+            expect(error.message.indexOf('not yet implemented') !== -1).to.equal(true);
+            done();
+          })
+          .catch(function(error) {
+            done(error);
+          });
+      });
+      it('should create client', function(done) {
+        modifiedClientSchema = _.cloneDeep(clientSchema);
+        delete modifiedClientSchema.properties.taxes;
+        var client = jsonSchemaTable('client', modifiedClientSchema, {
+          db, database,
+          datetime: true
         });
-    });
-    it('should create refforfab', function(done) {
-      var refforfab = jsonSchemaTable('refforfab', refforfabSchema, {db: db});
-      refforfab.create()
-        .then(function() {
-          return refforfab.metadata()
-            .then(function(metadata) {
-              metadata.should.not.have.property('foreignKeys');
-              metadata.should.have.property('primaryKey');
-              expect(metadata.primaryKey).to.be.a('array');
-              expect(metadata.primaryKey.length).to.equal(5);
-              expect(metadata.primaryKey[0]).to.equal('NUMCAT');
-              expect(metadata.primaryKey[1]).to.equal('NUMREF');
-              expect(metadata.primaryKey[2]).to.equal('MODEL');
-              expect(metadata.primaryKey[3]).to.equal('REF');
-              expect(metadata.primaryKey[4]).to.equal('SUPPLIER');
-              metadata.should.have.property('columns');
-              expect(metadata.columns).to.be.a('object');
-              checkColumns(metadata.columns, refforfabSchema);
-              done();
-            });
-        })
-        .catch(function(error) {
-          done(error);
-        });
+        client.create()
+          .then(function() {
+            return client.metadata()
+              .then(function(metadata) {
+                metadata.should.not.have.property('foreignKeys');
+                metadata.should.have.property('primaryKey');
+                expect(metadata.primaryKey).to.be.a('array');
+                expect(metadata.primaryKey.length).to.equal(1);
+                expect(metadata.primaryKey[0]).to.equal('clientId');
+                metadata.should.have.property('columns');
+                expect(metadata.columns).to.be.a('object');
+                var createdSchema = _.extend({}, modifiedClientSchema);
+                createdSchema.properties = _.pick(modifiedClientSchema.properties, [
+                  'id', 'initials', 'sales', 'debt', 'lastSale'
+                ]);
+                checkColumns(metadata.columns, createdSchema);
+                done();
+              });
+          })
+          .catch(function(error) {
+            done(error);
+          });
+      });
+      it('should create façade', function(done) {
+        var façade = jsonSchemaTable('façade', façadeSchema, {db, database});
+        façade.create()
+          .then(function() {
+            return façade.metadata()
+              .then(function(metadata) {
+                metadata.should.not.have.property('foreignKeys');
+                metadata.should.have.property('primaryKey');
+                expect(metadata.primaryKey).to.be.a('array');
+                expect(metadata.primaryKey.length).to.equal(1);
+                expect(metadata.primaryKey[0]).to.equal('Nome');
+                metadata.should.have.property('columns');
+                expect(metadata.columns).to.be.a('object');
+                checkColumns(metadata.columns, façadeSchema);
+                done();
+              });
+          })
+          .catch(function(error) {
+            done(error);
+          });
+      });
+      it('should create person façade', function(done) {
+        var personFaçade = jsonSchemaTable('personFaçade', personFaçadeSchema, {db, database});
+        personFaçade.create()
+          .then(function() {
+            return personFaçade.metadata()
+              .then(function(metadata) {
+                metadata.should.not.have.property('foreignKeys');
+                metadata.should.have.property('primaryKey');
+                expect(metadata.primaryKey).to.be.a('array');
+                expect(metadata.primaryKey.length).to.equal(2);
+                expect(metadata.primaryKey[0]).to.equal('person');
+                expect(metadata.primaryKey[1]).to.equal('XfaçadeX');
+                metadata.should.have.property('columns');
+                expect(metadata.columns).to.be.a('object');
+                checkColumns(metadata.columns, personFaçadeSchema);
+                done();
+              });
+          })
+          .catch(function(error) {
+            done(error);
+          });
+      });
+      it('should create person tax', function(done) {
+        var tax = jsonSchemaTable('tax', taxSchema, {db, database});
+        tax.create()
+          .then(function() {
+            return tax.metadata()
+              .then(function(metadata) {
+                metadata.should.not.have.property('foreignKeys');
+                metadata.should.have.property('primaryKey');
+                expect(metadata.primaryKey).to.be.a('array');
+                expect(metadata.primaryKey.length).to.equal(2);
+                expect(metadata.primaryKey[0]).to.equal('city');
+                expect(metadata.primaryKey[1]).to.equal('state');
+                metadata.should.have.property('columns');
+                expect(metadata.columns).to.be.a('object');
+                checkColumns(metadata.columns, taxSchema);
+                done();
+              });
+          })
+          .catch(function(error) {
+            done(error);
+          });
+      });
+      it('should create catalog', function(done) {
+        var catalog = jsonSchemaTable('catalog', catalogSchema, {db, database});
+        catalog.create()
+          .then(function() {
+            return catalog.metadata()
+              .then(function(metadata) {
+                metadata.should.not.have.property('foreignKeys');
+                metadata.should.have.property('primaryKey');
+                expect(metadata.primaryKey).to.be.a('array');
+                expect(metadata.primaryKey.length).to.equal(2);
+                expect(metadata.primaryKey[0]).to.equal('catnum');
+                expect(metadata.primaryKey[1]).to.equal('refnum');
+                metadata.should.have.property('columns');
+                expect(metadata.columns).to.be.a('object');
+                checkColumns(metadata.columns, catalogSchema);
+                done();
+              });
+          })
+          .catch(function(error) {
+            done(error);
+          });
+      });
+      it('should create reffab', function(done) {
+        var reffab = jsonSchemaTable('reffab', reffabSchema, {db, database});
+        reffab.create()
+          .then(function() {
+            return reffab.metadata()
+              .then(function(metadata) {
+                metadata.should.not.have.property('foreignKeys');
+                metadata.should.have.property('uniqueKeys');
+                expect(metadata.uniqueKeys).to.be.a('array');
+                expect(metadata.uniqueKeys.length).to.equal(3);
+                expect(metadata.uniqueKeys[0]).to.be.a('array');
+                expect(metadata.uniqueKeys[0].length).to.equal(4);
+                expect(metadata.uniqueKeys[0][0]).to.equal('NUMREF');
+                expect(metadata.uniqueKeys[0][1]).to.equal('NUMCAT');
+                expect(metadata.uniqueKeys[0][2]).to.equal('MODEL');
+                expect(metadata.uniqueKeys[0][3]).to.equal('REF');
+
+                expect(metadata.uniqueKeys[1]).to.be.a('array');
+                expect(metadata.uniqueKeys[1].length).to.equal(1);
+                expect(metadata.uniqueKeys[1][0]).to.equal('REF');
+
+                expect(metadata.uniqueKeys[2]).to.be.a('array');
+                expect(metadata.uniqueKeys[2].length).to.equal(2);
+                expect(metadata.uniqueKeys[2][0]).to.equal('REF');
+                expect(metadata.uniqueKeys[2][1]).to.equal('ORIGINAL');
+
+                metadata.should.have.property('columns');
+                expect(metadata.columns).to.be.a('object');
+                checkColumns(metadata.columns, reffabSchema);
+                done();
+              });
+          })
+          .catch(function(error) {
+            done(error);
+          });
+      });
+      it('should create refforfab', function(done) {
+        var refforfab = jsonSchemaTable('refforfab', refforfabSchema, {db, database});
+        refforfab.create()
+          .then(function() {
+            return refforfab.metadata()
+              .then(function(metadata) {
+                metadata.should.not.have.property('foreignKeys');
+                metadata.should.have.property('primaryKey');
+                expect(metadata.primaryKey).to.be.a('array');
+                expect(metadata.primaryKey.length).to.equal(5);
+                expect(metadata.primaryKey[0]).to.equal('NUMCAT');
+                expect(metadata.primaryKey[1]).to.equal('NUMREF');
+                expect(metadata.primaryKey[2]).to.equal('MODEL');
+                expect(metadata.primaryKey[3]).to.equal('REF');
+                expect(metadata.primaryKey[4]).to.equal('SUPPLIER');
+                metadata.should.have.property('columns');
+                expect(metadata.columns).to.be.a('object');
+                checkColumns(metadata.columns, refforfabSchema);
+                done();
+              });
+          })
+          .catch(function(error) {
+            done(error);
+          });
+      });
     });
   });
 
