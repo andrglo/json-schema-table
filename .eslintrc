@@ -9,7 +9,7 @@
       "single"
     ],
     "indent": [
-      2,
+      0,
       2
     ],
     "one-var": [
@@ -158,7 +158,7 @@
     "no-spaced-func": 2,
     "no-trailing-spaces": 2,
     "no-underscore-dangle": 2,
-    "no-wrap-func": 2,
+    "no-extra-parens": 0,
     "semi-spacing": [
       2,
       {
