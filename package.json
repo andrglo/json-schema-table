@@ -29,8 +29,8 @@
     "gulp-mocha": "^2.2.0",
     "gulp-nsp": "^2.3.0",
     "gulp-util": "^3.0.7",
-    "mssql-cr-layer": "^1.0.2",
-    "pg-cr-layer": "^1.0.1",
+    "mssql-cr-layer": "^1.0.5",
+    "pg-cr-layer": "^1.0.3",
     "pretty-hrtime": "^1.0.1"
   },
   "scripts": {

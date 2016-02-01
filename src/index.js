@@ -95,8 +95,8 @@ function getDbMetadata(dialect, tableName, connection) {
     tablesWithForeignKeys: {},
     columns: {}
   };
-  var catalog = connection.database || dialect.db.config.database;
-  var schema = connection.schema || dialect.db.config.schema || dialect.db.dialect === 'mssql' ? 'dbo' : 'public';
+  var catalog = dialect.db.dialect === 'mssql' ? 'db_name()' : 'current_database()';
+  var schema = connection.schema || dialect.db.dialect === 'mssql' ? 'dbo' : 'public';
   return dialect.db.query('SELECT pk.CONSTRAINT_NAME as constraint_name,pk.TABLE_NAME as table_name,' +
     'pk.COLUMN_NAME as column_name,' +
     'rfk.TABLE_NAME as ref_table_name,rfk.COLUMN_NAME as ref_column_name,' +
@@ -110,7 +110,7 @@ function getDbMetadata(dialect, tableName, connection) {
     'LEFT OUTER JOIN INFORMATION_SCHEMA.KEY_COLUMN_USAGE as rfk ON rk.UNIQUE_CONSTRAINT_NAME=rfk.CONSTRAINT_NAME ' +
     'AND pk.ORDINAL_POSITION=rfk.ORDINAL_POSITION AND ' +
     'pk.TABLE_CATALOG=rfk.TABLE_CATALOG AND pk.TABLE_SCHEMA=rfk.TABLE_SCHEMA ' +
-    'WHERE pk.TABLE_CATALOG=\'' + catalog + '\'' +
+    'WHERE pk.TABLE_CATALOG=' + catalog +
     'AND pk.TABLE_SCHEMA=\'' + schema + '\'' +
     'ORDER BY pk.TABLE_NAME,pk.CONSTRAINT_NAME,pk.ORDINAL_POSITION', null, connection)
     .then(function(recordset) {
@@ -153,7 +153,7 @@ function getDbMetadata(dialect, tableName, connection) {
         'CHARACTER_MAXIMUM_LENGTH as character_maximum_length,NUMERIC_PRECISION as numeric_precision,' +
         'NUMERIC_SCALE as numeric_scale FROM ' +
         'INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME=\'' + tableName + '\'' +
-        'AND TABLE_CATALOG=\'' + catalog + '\'' +
+        'AND TABLE_CATALOG=' + catalog +
         'AND TABLE_SCHEMA=\'' + schema + '\'', null, connection);
     })
     .then(function(recordset) {
