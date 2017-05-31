@@ -1,3 +1,4 @@
+/* eslint-disable no-extra-parens */
 var _ = require('lodash');
 
 function findProperty(name, properties) {

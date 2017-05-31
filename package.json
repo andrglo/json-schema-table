@@ -1,6 +1,6 @@
 {
   "name": "json-schema-table",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "Creates and maintains a SQL table structure",
   "homepage": "",
   "repository": "https://github.com/andrglo/json-schema-table.git",
@@ -22,15 +22,16 @@
   ],
   "devDependencies": {
     "chai": "^3.4.1",
+    "eslint-config-google": "^0.7.1",
     "gulp": "^3.9.1",
     "gulp-coveralls": "^0.1.4",
     "gulp-eslint": "^3.0.1",
-    "gulp-istanbul": "^1.0.0",
-    "gulp-mocha": "^2.2.0",
+    "gulp-istanbul": "^1.1.1",
+    "gulp-mocha": "3.0.1",
     "gulp-nsp": "^2.4.1",
     "gulp-util": "^3.0.7",
-    "mssql-cr-layer": "^1.0.7",
-    "pg-cr-layer": "^1.0.5",
+    "mssql-cr-layer": "^2.0.0",
+    "pg-cr-layer": "^2.0.0",
     "pretty-hrtime": "^1.0.2"
   },
   "scripts": {

@@ -74,11 +74,10 @@ function checkForeignKey(fks, columns, refTable, refTableColumns) {
 module.exports = function(options) {
   var db;
 
-  [options.database, options.database + '2'].map(function(database) {
-    describe(database + ' - table with no references', function() {
+    describe('Table with no references', function() {
       it('should not sync person before its created', function(done) {
         db = options.db;
-        var person = jsonSchemaTable('person', personSchema, {db, database});
+        var person = jsonSchemaTable('person', personSchema, {db});
         person.sync()
           .then(function() {
             done(new Error('Invalid table synced'));
@@ -92,7 +91,7 @@ module.exports = function(options) {
           });
       });
       it('should create person', function(done) {
-        var person = jsonSchemaTable('person', personSchema, {db, database});
+        var person = jsonSchemaTable('person', personSchema, {db});
         person.create()
           .then(function() {
             return person.metadata()
@@ -130,7 +129,7 @@ module.exports = function(options) {
           .catch(done);
       });
       it('should not create client due property with type array', function(done) {
-        var client = jsonSchemaTable('client', clientSchema, {db, database});
+        var client = jsonSchemaTable('client', clientSchema, {db});
         client.create()
           .then(function() {
             done(new Error('Invalid table created'));
@@ -147,7 +146,7 @@ module.exports = function(options) {
         modifiedClientSchema = _.cloneDeep(clientSchema);
         delete modifiedClientSchema.properties.taxes;
         var client = jsonSchemaTable('client', modifiedClientSchema, {
-          db, database,
+          db,
           datetime: true
         });
         client.create()
@@ -174,7 +173,7 @@ module.exports = function(options) {
           });
       });
       it('should create façade', function(done) {
-        var façade = jsonSchemaTable('façade', façadeSchema, {db, database});
+        var façade = jsonSchemaTable('façade', façadeSchema, {db});
         façade.create()
           .then(function() {
             return façade.metadata()
@@ -195,7 +194,7 @@ module.exports = function(options) {
           });
       });
       it('should create person façade', function(done) {
-        var personFaçade = jsonSchemaTable('personFaçade', personFaçadeSchema, {db, database});
+        var personFaçade = jsonSchemaTable('personFaçade', personFaçadeSchema, {db});
         personFaçade.create()
           .then(function() {
             return personFaçade.metadata()
@@ -217,7 +216,7 @@ module.exports = function(options) {
           });
       });
       it('should create person tax', function(done) {
-        var tax = jsonSchemaTable('tax', taxSchema, {db, database});
+        var tax = jsonSchemaTable('tax', taxSchema, {db});
         tax.create()
           .then(function() {
             return tax.metadata()
@@ -239,7 +238,7 @@ module.exports = function(options) {
           });
       });
       it('should create catalog', function(done) {
-        var catalog = jsonSchemaTable('catalog', catalogSchema, {db, database});
+        var catalog = jsonSchemaTable('catalog', catalogSchema, {db});
         catalog.create()
           .then(function() {
             return catalog.metadata()
@@ -261,7 +260,7 @@ module.exports = function(options) {
           });
       });
       it('should create reffab', function(done) {
-        var reffab = jsonSchemaTable('reffab', reffabSchema, {db, database});
+        var reffab = jsonSchemaTable('reffab', reffabSchema, {db});
         reffab.create()
           .then(function() {
             return reffab.metadata()
@@ -297,7 +296,7 @@ module.exports = function(options) {
           });
       });
       it('should create refforfab', function(done) {
-        var refforfab = jsonSchemaTable('refforfab', refforfabSchema, {db, database});
+        var refforfab = jsonSchemaTable('refforfab', refforfabSchema, {db});
         refforfab.create()
           .then(function() {
             return refforfab.metadata()
@@ -322,7 +321,6 @@ module.exports = function(options) {
           });
       });
     });
-  });
 
   describe('table with references if the reference exists', function() {
     it('should not alter person due table state not exists', function(done) {

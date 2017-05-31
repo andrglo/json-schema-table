@@ -1,7 +1,9 @@
-postgres:
-  image: postgres:9.4
-  ports:
-    - 5432:5432
-  environment:
-    POSTGRES_PASSWORD: postgres
-  restart: always
+version: '2'
+
+services:
+
+  postgres:
+    image: andrglo/postgres:9.6-2
+    ports:
+      - 5432:5432
+    restart: always

@@ -6,7 +6,7 @@ var MssqlCrLayer = require('mssql-cr-layer');
 
 var pgConfig = {
   user: process.env.POSTGRES_USER || 'postgres',
-  password: process.env.POSTGRES_PASSWORD,
+  password: process.env.POSTGRES_PASSWORD || 'postgres',
   database: 'postgres',
   host: process.env.POSTGRES_HOST || 'localhost',
   port: process.env.POSTGRES_PORT || 5432,
@@ -60,7 +60,7 @@ function createMssqlDb() {
 var pgOptions = {database: databaseName};
 var mssqlOptions = {database: databaseName};
 
-before(function(done) {
+before(function() {
   return pg.connect()
     .then(function() {
       return createPostgresDb()
@@ -92,12 +92,6 @@ before(function(done) {
               });
           });
       }
-    })
-    .then(function() {
-      done();
-    })
-    .catch(function(error) {
-      done(error);
     });
 });
 
