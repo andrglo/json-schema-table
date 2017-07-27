@@ -504,16 +504,15 @@ function propertyToPostgres(property, name, schema, isAlter) {
       break;
     case 'string':
       if (property.format=='date-time') {
-        property.type = 'datetime';
-        // Fall through
+        column = 'TIMESTAMPTZ';
       } else {
         if (property.maxLength) {
           column = 'VARCHAR(' + property.maxLength + ')';
         } else {
           column = 'TEXT';
         }
-        break;
       }
+      break;
     case 'date':
       column = 'DATE';
       break;
