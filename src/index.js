@@ -503,7 +503,7 @@ function propertyToPostgres(property, name, schema, isAlter) {
       column = 'BYTEA';
       break;
     case 'string':
-      if (property.format=='date-time') {
+      if (property.format === 'date-time') {
         column = 'TIMESTAMPTZ';
       } else {
         if (property.maxLength) {
