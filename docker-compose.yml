@@ -3,7 +3,9 @@ version: '2'
 services:
 
   postgres:
-    image: andrglo/postgres:9.6-2
+    image: sameersbn/postgresql:9.6-2
     ports:
-      - 5432:5432
+      - 5439:5432
+    environment:
+      PG_PASSWORD: postgres
     restart: always
