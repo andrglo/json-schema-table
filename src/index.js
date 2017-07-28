@@ -496,14 +496,21 @@ function propertyToPostgres(property, name, schema, isAlter) {
     case 'text':
       column = 'TEXT';
       break;
+    case 'boolean':
+      column = 'BOOLEAN';
+      break;
     case 'blob':
       column = 'BYTEA';
       break;
     case 'string':
-      if (property.maxLength) {
-        column = 'VARCHAR(' + property.maxLength + ')';
+      if (property.format === 'date-time') {
+        column = 'TIMESTAMPTZ';
       } else {
-        column = 'TEXT';
+        if (property.maxLength) {
+          column = 'VARCHAR(' + property.maxLength + ')';
+        } else {
+          column = 'TEXT';
+        }
       }
       break;
     case 'date':
