@@ -486,7 +486,7 @@ function mssqlToProperty(metadata) {
 
 function propertyToPostgres(property, name, schema, isAlter) {
   var column;
-  var integerType = (this.bigint ? 'BIGINT' : 'INTEGER');
+  var integerType = this.bigint ? 'BIGINT' : 'INTEGER';
 
   switch (property.type) {
     case 'integer':
