@@ -21,6 +21,7 @@ function jsonSchemaTable(tableName, schema, config) {
     dialect.propertyToDb = propertyToMssql;
   } else {
     dialect.propertyToDb = propertyToPostgres;
+    dialect.bigint = !!config.bigint;
   }
   return {
     create: function() {
@@ -485,12 +486,14 @@ function mssqlToProperty(metadata) {
 
 function propertyToPostgres(property, name, schema, isAlter) {
   var column;
+  var integerType = (this.bigint ? 'BIGINT' : 'INTEGER');
+
   switch (property.type) {
     case 'integer':
       if (property.autoIncrement === true) {
         column = 'SERIAL';
       } else {
-        column = 'INTEGER';
+        column = integerType;
       }
       break;
     case 'text':
@@ -532,7 +535,7 @@ function propertyToPostgres(property, name, schema, isAlter) {
       if (property.decimals && property.decimals > 0) {
         column = 'NUMERIC(' + property.maxLength + ',' + property.decimals + ')';
       } else {
-        column = 'INTEGER';
+        column = integerType;
       }
       break;
     case 'object':
