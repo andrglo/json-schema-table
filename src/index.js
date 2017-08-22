@@ -535,7 +535,7 @@ function propertyToPostgres(property, name, schema, isAlter) {
       if (property.decimals && property.decimals > 0) {
         column = 'NUMERIC(' + property.maxLength + ',' + property.decimals + ')';
       } else {
-        column = 'REAL';
+        column = 'DOUBLE PRECISION';
       }
       break;
     case 'object':
