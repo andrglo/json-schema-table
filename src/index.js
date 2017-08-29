@@ -22,6 +22,7 @@ function jsonSchemaTable(tableName, schema, config) {
   } else {
     dialect.propertyToDb = propertyToPostgres;
     dialect.bigint = !!config.bigint;
+    dialect.doubleFloats = !!config.doubleFloats;
   }
   return {
     create: function() {
@@ -487,6 +488,7 @@ function mssqlToProperty(metadata) {
 function propertyToPostgres(property, name, schema, isAlter) {
   var column;
   var integerType = this.bigint ? 'BIGINT' : 'INTEGER';
+  var floatType = this.doubleFloats ? 'DOUBLE PRECISION' : 'REAL';
 
   switch (property.type) {
     case 'integer':
@@ -535,7 +537,7 @@ function propertyToPostgres(property, name, schema, isAlter) {
       if (property.decimals && property.decimals > 0) {
         column = 'NUMERIC(' + property.maxLength + ',' + property.decimals + ')';
       } else {
-        column = 'DOUBLE PRECISION';
+        column = floatType;
       }
       break;
     case 'object':
@@ -571,9 +573,17 @@ function postgresToProperty(metadata) {
   var property = {name: metadata.column_name};
   switch (metadata.data_type) {
     case 'integer':
+    case 'boolean':
     case 'text':
     case 'date':
       property.type = metadata.data_type;
+      break;
+    case 'bigint':
+      property.type = 'integer';
+      break;
+    case 'real':
+    case 'double precision':
+      property.type = 'numeric';
       break;
     case 'time':
       property.type = 'time';
