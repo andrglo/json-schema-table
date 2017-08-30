@@ -536,6 +536,8 @@ function propertyToPostgres(property, name, schema, isAlter) {
     case 'number':
       if (property.decimals && property.decimals > 0) {
         column = 'NUMERIC(' + property.maxLength + ',' + property.decimals + ')';
+      } else if (property.maxLength > 0) {
+        column = integerType;
       } else {
         column = floatType;
       }
@@ -583,7 +585,7 @@ function postgresToProperty(metadata) {
       break;
     case 'real':
     case 'double precision':
-      property.type = 'numeric';
+      property.type = 'number';
       break;
     case 'time':
       property.type = 'time';
