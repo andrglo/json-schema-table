@@ -103,7 +103,7 @@ function getDbMetadata(dialect, tableName, config) {
     'pk.COLUMN_NAME as column_name,' +
     'rfk.TABLE_NAME as ref_table_name,rfk.COLUMN_NAME as ref_column_name,' +
     'c.DATA_TYPE as data_type,c.CHARACTER_MAXIMUM_LENGTH as character_maximum_length,' +
-    'c.NUMERIC_PRECISION as numeric_precisison,c.NUMERIC_SCALE as numerico_scale ' +
+    'c.NUMERIC_PRECISION as numeric_precision,c.NUMERIC_SCALE as numerico_scale ' +
     'FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE as pk ' +
     'INNER JOIN INFORMATION_SCHEMA.COLUMNS as c ON pk.COLUMN_NAME=c.COLUMN_NAME AND pk.TABLE_NAME=c.TABLE_NAME AND ' +
     'pk.TABLE_CATALOG=c.TABLE_CATALOG AND pk.TABLE_SCHEMA=c.TABLE_SCHEMA ' +
