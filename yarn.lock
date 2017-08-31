@@ -1968,9 +1968,9 @@ pg-connection-string@0.1.3:
   version "0.1.3"
   resolved "https://registry.yarnpkg.com/pg-connection-string/-/pg-connection-string-0.1.3.tgz#da1847b20940e42ee1492beaf65d49d91b245df7"
 
-pg-cr-layer@^2.0.0:
-  version "2.0.0"
-  resolved "https://registry.yarnpkg.com/pg-cr-layer/-/pg-cr-layer-2.0.0.tgz#98d2e66fe194b35a8b769dbd8b1e2556f34ceacc"
+pg-cr-layer@^2.0.2:
+  version "2.0.2"
+  resolved "https://registry.yarnpkg.com/pg-cr-layer/-/pg-cr-layer-2.0.2.tgz#3a73c016d44851d7a97e9c556844d807a2fce3ca"
   dependencies:
     pg "^6.1.0"
 

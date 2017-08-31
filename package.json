@@ -1,6 +1,6 @@
 {
   "name": "json-schema-table",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "description": "Creates and maintains a SQL table structure",
   "homepage": "",
   "repository": "https://github.com/andrglo/json-schema-table.git",
@@ -31,7 +31,7 @@
     "gulp-nsp": "^2.4.1",
     "gulp-util": "^3.0.7",
     "mssql-cr-layer": "^2.0.0",
-    "pg-cr-layer": "^2.0.0",
+    "pg-cr-layer": "^2.0.2",
     "pretty-hrtime": "^1.0.2"
   },
   "scripts": {
