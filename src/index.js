@@ -25,7 +25,7 @@ function jsonSchemaTable(tableName, schema, config) {
     dialect.doubleFloats = !!config.doubleFloats;
   }
 
-  var schemaName = config.schema || (dialect.db.dialect === 'mssql' ? 'dbo' : 'public');
+  var tableSchemaName = config.schema || (dialect.db.dialect === 'mssql' ? 'dbo' : 'public');
 
   return {
     create: function() {
@@ -44,9 +44,9 @@ function jsonSchemaTable(tableName, schema, config) {
           if (!tableExists(metadata)) {
             throw new Error('All tables should be created first');
           }
-          return checkTableStructure(dialect, tableName, schemaName, schema, metadata)
+          return checkTableStructure(dialect, tableName, tableSchemaName, schema, metadata)
             .then(function() {
-              return createTableReferences(dialect, tableName, schemaName, schema, metadata);
+              return createTableReferences(dialect, tableName, tableSchemaName, schema, metadata);
             });
         })
         .catch(function(error) {
@@ -645,7 +645,7 @@ function tableExists(metadata) {
 }
 
 function checkTableStructure(dialect, tableName, tableSchemaName, schema, metadata) {
-  var command = alterTable(dialect, tableName, schema, metadata);
+  var command = alterTable(dialect, tableName, tableSchemaName, schema, metadata);
   return command.length === 0 ? Promise.resolve() : dialect.db.execute(command);
 }
 
@@ -665,7 +665,7 @@ function equalDefinitions(was, is) {
     was.type === 'integer' &&
     is.type === 'number' &&
     (is.decimals === void 0 || is.decimals === 0) ||
-    was.type === 'datetime' && is.type === 'date' ||
+    was.type === 'datetime' && (is.type === 'date' || is.type === 'string' && is.format === 'date-time') ||
     was.type === 'text' && (is.type === 'string' && is.maxLength === void 0);
 }
 
