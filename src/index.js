@@ -31,10 +31,10 @@ function jsonSchemaTable(tableName, schema, config) {
     create: function() {
       return Promise.resolve()
         .then(function() {
-          return dialect.db.execute(createTable(dialect, tableName, schema));
+          return dialect.db.execute(createTable(dialect, tableName, tableSchemaName, schema));
         })
         .catch(function(error) {
-          wrapError(error, tableName);
+          wrapError(error, [tableSchemaName, tableName].join('.'));
           throw error;
         });
     },
@@ -170,11 +170,17 @@ function getDbMetadata(dialect, tableName, config) {
     });
 }
 
-function createTable(dialect, tableName, schema) {
+function createTable(dialect, tableName, tableSchemaName, schema) {
   var columns = [];
   var primaryKey = utils.mapToColumnName(schema.primaryKey, schema) || [];
   var primaryKeyDefined = primaryKey.length > 0;
   var unique = [];
+
+  var qualifiedTableName = [
+    dialect.db.wrap(tableSchemaName),
+    dialect.db.wrap(tableName)
+  ].join('.');
+
   _.forEach(schema.properties, function(property, name) {
     var fieldName = property.field || name;
     var fieldType = dialect.propertyToDb(property, name, schema);
@@ -213,9 +219,8 @@ function createTable(dialect, tableName, schema) {
   return dialect.db.dialect === 'mssql' ?
   'IF (NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE ' +
   'TABLE_SCHEMA = \'dbo\' AND  TABLE_NAME = \'' + tableName + '\')) ' +
-  'CREATE TABLE [' + tableName + '] (' + columns.join(',') + ')' :
-  'CREATE TABLE IF NOT EXISTS "' + tableName + '" (' +
-  columns.join(',') + ')';
+    `CREATE TABLE [${qualifiedTableName}] (${columns.join(',')})` :
+    `CREATE TABLE IF NOT EXISTS ${qualifiedTableName} (${columns.join(',')})`;
 }
 
 function alterTable(dialect, tableName, tableSchemaName, schema, metadata) {
