@@ -18,8 +18,8 @@ var pgConfig = {
 var pg = new PgCrLayer(pgConfig);
 
 var mssqlConfig = {
-  user: process.env.MSSQL_USER,
-  password: process.env.MSSQL_PASSWORD,
+  user: process.env.MSSQL_USER || 'sa',
+  password: process.env.MSSQL_PASSWORD || 'Passw0rd',
   database: 'master',
   host: process.env.MSSQL_HOST || 'localhost',
   port: process.env.MSSQL_PORT || 1433,
