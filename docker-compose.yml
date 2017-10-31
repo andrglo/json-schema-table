@@ -3,9 +3,14 @@ version: '2'
 services:
 
   postgres:
-    image: sameersbn/postgresql:9.6-2
+    image: postgres
     ports:
-      - 5439:5432
-    environment:
-      PG_PASSWORD: postgres
+      - 5432:5432
     restart: always
+  mssql:
+    image: microsoft/mssql-server-linux
+    ports:
+      - 1433:1433
+    environment:
+      ACCEPT_EULA: "y"
+      SA_PASSWORD: "Passw0rd"
