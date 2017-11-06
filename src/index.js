@@ -95,9 +95,9 @@ function jsonSchemaTable(tableName, schema, config) {
 function getDbMetadata(dialect, tableName, dbSchemaName) {
   function isRedshift() {
     return new Promise(function(resolve, reject) {
-      if (dialect.db.dialect !== 'postgres')
+      if (dialect.db.dialect !== 'postgres') {
         resolve(false);
-      else {
+      } else {
         dialect.db.isRedshift()
         .then(function(res) {
           resolve(res);
@@ -139,12 +139,13 @@ function getDbMetadata(dialect, tableName, dbSchemaName) {
         .then(function(recordset) {
           var constraints = {};
           recordset.map(function(record) {
-            if (!constraints[record.constraint_name])
+            if (!constraints[record.constraint_name]) {
               constraints[record.constraint_name] = {
                 table: record.table_name,
                 references: record.ref_table_name,
                 columns: []
               };
+            }
 
             var constraint = constraints[record.constraint_name];
             constraint.columns.push(dbToProperty(record));
@@ -728,11 +729,11 @@ function buildUniqueConstraintName(tableName, unique) {
 
 function uniqueKeyExists(key, existentKeys) {
   var found = false;
-  var hash = (key.join('')).toLowerCase();
+  var hash = key.join('').toLowerCase();
   _.forEach(existentKeys, function(uk) {
-    var ukHash = (uk.reduce(function(columns, column) {
+    var ukHash = uk.reduce(function(columns, column) {
       return columns + column.name;
-    }, '')).toLowerCase();
+    }, '').toLowerCase();
     if (hash === ukHash) {
       found = true;
       return false;
