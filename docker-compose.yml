@@ -2,15 +2,31 @@ version: '2'
 
 services:
 
-  postgres:
-    image: postgres
-    ports:
-      - 5432:5432
-    restart: always
-  mssql:
-    image: microsoft/mssql-server-linux
-    ports:
-      - 1433:1433
+  dms:
+    image: andrglo/everest:12.0.0
+    hostname: json-schema-table
+    command: tail -f /dev/null
+    working_dir: /root/json-schema-table
+    volumes:
+      - ./docker_fish_history:/root/.config/fish/fish_history
+      - .:/root/json-schema-table
     environment:
-      ACCEPT_EULA: "y"
-      SA_PASSWORD: "Passw0rd"
+      - NODE_ENV=test
+      - MSSQL_PASSWORD=Passw0rd
+      - MSSQL_HOST=mssql
+      - POSTGRES_HOST=postgres
+    restart: always
+
+  mssql:
+    image: mcr.microsoft.com/mssql/server:2017-CU12
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=Passw0rd
+    restart: always
+
+  postgres:
+    image: postgres:11.2-alpine
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    restart: always
