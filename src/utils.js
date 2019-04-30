@@ -1,40 +1,51 @@
-/* eslint-disable no-extra-parens */
-var _ = require('lodash');
+const _ = require('lodash')
 
 function findProperty(name, properties) {
-  var property = properties[name];
+  let property = properties[name]
   if (property === void 0) {
-    property = _.reduce(properties, function(res, prop, propName) {
-        return res ? res : (name === propName ? prop : void 0);
-      }, void 0) ||
-      _.reduce(properties, function(res, prop) {
-        return res ? res : (prop.field && name === prop.field ? prop : void 0);
-      }, void 0);
+    property =
+      _.reduce(
+          properties,
+          function(res, prop, propName) {
+            return res ? res : name === propName ? prop : void 0
+          },
+          void 0
+      ) ||
+      _.reduce(
+          properties,
+          function(res, prop) {
+            return res ? res : prop.field && name === prop.field ? prop : void 0
+          },
+          void 0
+      )
     if (property === void 0) {
-      throw new Error('Property "' + name + '" not found');
+      throw new Error('Property "' + name + '" not found')
     }
   }
-  return property;
+  return property
 }
 
-exports.isInArray = isInArray;
+exports.isInArray = isInArray
 
 function isInArray(name, array, schema) {
-  var found = false;
-  var property = findProperty(name, schema.properties);
+  let found = false
+  const property = findProperty(name, schema.properties)
   _.forEach(array, function(element) {
     if (name === element || name === property.field) {
-      found = true;
-      return false;
+      found = true
+      return false
     }
-  });
-  return found;
+  })
+  return found
 }
 
-exports.mapToColumnName = mapToColumnName;
+exports.mapToColumnName = mapToColumnName
 
 function mapToColumnName(array, schema) {
-  return array && array.map(function(name) {
-    return findProperty(name, schema.properties).field || name;
-  });
+  return (
+    array &&
+    array.map(function(name) {
+      return findProperty(name, schema.properties).field || name
+    })
+  )
 }

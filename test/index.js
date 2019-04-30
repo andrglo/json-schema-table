@@ -1,10 +1,8 @@
-var spec = require('./spec');
-var gutil = require('gulp-util');
-var pretty = require('pretty-hrtime');
-var PgCrLayer = require('pg-cr-layer');
-var MssqlCrLayer = require('mssql-cr-layer');
+const spec = require('./spec')
+const PgCrLayer = require('pg-cr-layer')
+const MssqlCrLayer = require('mssql-cr-layer')
 
-var pgConfig = {
+const pgConfig = {
   user: process.env.POSTGRES_USER || 'postgres',
   password: process.env.POSTGRES_PASSWORD || 'postgres',
   database: 'postgres',
@@ -14,10 +12,10 @@ var pgConfig = {
     max: 10,
     idleTimeout: 30000
   }
-};
-var pg = new PgCrLayer(pgConfig);
+}
+const pg = new PgCrLayer(pgConfig)
 
-var mssqlConfig = {
+const mssqlConfig = {
   user: process.env.MSSQL_USER || 'sa',
   password: process.env.MSSQL_PASSWORD || 'Passw0rd',
   database: 'master',
@@ -27,104 +25,117 @@ var mssqlConfig = {
     max: 10,
     idleTimeout: 30000
   }
-};
-var mssql = new MssqlCrLayer(mssqlConfig);
+}
+const mssql = new MssqlCrLayer(mssqlConfig)
 
-var databaseName = process.env.POSTGRES_DATABASE || 'test-json-schema-table';
+const databaseName = process.env.POSTGRES_DATABASE || 'test-json-schema-table'
 
 function createPostgresDb() {
-  return pg.execute(
-    'DROP DATABASE IF EXISTS "' + databaseName + '";')
-    .then(function() {
-      return pg.execute('CREATE DATABASE "' + databaseName + '"');
-    })
-    .then(function() {
-      return pg.execute('DROP DATABASE IF EXISTS "' + databaseName + '2";');
-    })
-    .then(function() {
-      return pg.execute('CREATE DATABASE "' + databaseName + '2"');
-    });
+  return pg
+      .execute('DROP DATABASE IF EXISTS "' + databaseName + '";')
+      .then(function() {
+        return pg.execute('CREATE DATABASE "' + databaseName + '"')
+      })
+      .then(function() {
+        return pg.execute('DROP DATABASE IF EXISTS "' + databaseName + '2";')
+      })
+      .then(function() {
+        return pg.execute('CREATE DATABASE "' + databaseName + '2"')
+      })
 }
 
 function createMssqlDb() {
   return mssql.execute(
-    'IF EXISTS(select * from sys.databases where name=\'' +
-    databaseName + '\') DROP DATABASE [' + databaseName + '];' +
-    'CREATE DATABASE [' + databaseName + '];' +
-    'IF EXISTS(select * from sys.databases where name=\'' +
-    databaseName + '2\') DROP DATABASE [' + databaseName + '2];' +
-    'CREATE DATABASE [' + databaseName + '2];'
-  );
+      'IF EXISTS(select * from sys.databases where name=\'' +
+      databaseName +
+      '\') DROP DATABASE [' +
+      databaseName +
+      '];' +
+      'CREATE DATABASE [' +
+      databaseName +
+      '];' +
+      'IF EXISTS(select * from sys.databases where name=\'' +
+      databaseName +
+      '2\') DROP DATABASE [' +
+      databaseName +
+      '2];' +
+      'CREATE DATABASE [' +
+      databaseName +
+      '2];'
+  )
 }
 
-var pgOptions = {database: databaseName};
-var mssqlOptions = {database: databaseName};
+const pgOptions = {database: databaseName}
+const mssqlOptions = {database: databaseName}
 
 before(function() {
-  return pg.connect()
-    .then(function() {
-      return createPostgresDb()
-        .then(function() {
-          gutil.log('Postgres db created');
-          return pg.close();
-        })
-        .then(function() {
-          gutil.log('Postgres db creation connection closed');
-          pgConfig.database = databaseName;
-          gutil.log('Postgres will connect to', pgConfig.database);
-          pgOptions.db = new PgCrLayer(pgConfig);
-        });
-    })
-    .then(function() {
-      if (!process.env.CI) {
-        return mssql.connect()
-          .then(function() {
+  return pg
+      .connect()
+      .then(function() {
+        return createPostgresDb()
+            .then(function() {
+              console.log('Postgres db created')
+              return pg.close()
+            })
+            .then(function() {
+              console.log('Postgres db creation connection closed')
+              pgConfig.database = databaseName
+              console.log('Postgres will connect to', pgConfig.database)
+              pgOptions.db = new PgCrLayer(pgConfig)
+            })
+      })
+      .then(function() {
+        if (!process.env.CI) {
+          return mssql.connect().then(function() {
             return createMssqlDb()
-              .then(function() {
-                gutil.log('Mssql db created');
-                return mssql.close();
-              })
-              .then(function() {
-                gutil.log('Mssql db creation connection closed');
-                mssqlConfig.database = databaseName;
-                gutil.log('Mssql will connect to', mssqlConfig.database);
-                mssqlOptions.db = new MssqlCrLayer(mssqlConfig);
-              });
-          });
-      }
-    });
-});
+                .then(function() {
+                  console.log('Mssql db created')
+                  return mssql.close()
+                })
+                .then(function() {
+                  console.log('Mssql db creation connection closed')
+                  mssqlConfig.database = databaseName
+                  console.log('Mssql will connect to', mssqlConfig.database)
+                  mssqlOptions.db = new MssqlCrLayer(mssqlConfig)
+                })
+          })
+        }
+      })
+})
 
 describe('postgres', function() {
-  var duration;
+  let duration
   before(function() {
-    duration = process.hrtime();
-  });
-  spec(pgOptions);
+    duration = process.hrtime()
+  })
+  spec(pgOptions)
   after(function() {
-    duration = process.hrtime(duration);
-    gutil.log('Postgres finished after', gutil.colors.magenta(pretty(duration)));
-  });
-});
+    duration = process.hrtime(duration)
+    console.info(
+        'postgres finished after: %ds %dms',
+        duration[0],
+        duration[1] / 1000000
+    )
+  })
+})
 
 describe('mssql', function() {
-  if (process.env.CI) {
-    return;
-  }
-  var duration;
+  let duration
   before(function() {
-    duration = process.hrtime();
-  });
-  spec(mssqlOptions);
+    duration = process.hrtime()
+  })
+  spec(mssqlOptions)
   after(function() {
-    duration = process.hrtime(duration);
-    gutil.log('Mssql finished after', gutil.colors.magenta(pretty(duration)));
-  });
-});
+    duration = process.hrtime(duration)
+    console.info(
+        'mssql finished after: %ds %dms',
+        duration[0],
+        duration[1] / 1000000
+    )
+  })
+})
 
 after(function() {
-  if (!process.env.CI) {
-    mssqlOptions.db.close();
-  }
-  pgOptions.db.close();
-});
+  mssqlOptions.db.close()
+  pgOptions.db.close()
+})
