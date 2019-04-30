@@ -2,12 +2,10 @@
   "name": "json-schema-table",
   "version": "1.0.10",
   "description": "Creates and maintains a SQL table structure",
-  "homepage": "",
   "repository": "https://github.com/andrglo/json-schema-table.git",
   "author": {
     "name": "Andre Gloria",
-    "email": "andredagloria@gmail.com",
-    "url": "andrglo.com"
+    "email": "andredagloria@gmail.com"
   },
   "files": [
     "src"
@@ -21,25 +19,22 @@
     "mssql"
   ],
   "devDependencies": {
-    "chai": "^3.4.1",
-    "eslint-config-google": "^0.9.1",
-    "gulp": "^3.9.1",
-    "gulp-coveralls": "^0.1.4",
-    "gulp-eslint": "^4.0.0",
-    "gulp-istanbul": "^1.1.2",
-    "gulp-mocha": "3.0.1",
-    "gulp-nsp": "^2.4.1",
-    "gulp-util": "^3.0.7",
-    "mssql-cr-layer": "^2.0.0",
-    "pg-cr-layer": "^2.0.3",
-    "pretty-hrtime": "^1.0.2"
+    "chai": "^4.2.0",
+    "coveralls": "^3.0.3",
+    "eslint": "^5.16.0",
+    "eslint-config-google": "^0.12.0",
+    "mocha": "^6.1.4",
+    "mssql-cr-layer": "^2.0.2",
+    "nyc": "^14.0.0",
+    "pg-cr-layer": "^2.0.6"
   },
   "scripts": {
-    "prepublish": "gulp prepublish",
-    "test": "gulp"
+    "test": "nyc mocha --bail --exit --timeout 15000 test/index.js",
+    "test:report:coverage": "nyc report --reporter=text-lcov | coveralls",
+    "ssh": "docker exec -it json-schema-table_dms_1 fish"
   },
   "license": "MIT",
   "dependencies": {
-    "lodash": "^4.13.1"
+    "lodash": "^4.17.11"
   }
 }
