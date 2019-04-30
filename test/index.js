@@ -85,21 +85,19 @@ before(function() {
             })
       })
       .then(function() {
-        if (!process.env.CI) {
-          return mssql.connect().then(function() {
-            return createMssqlDb()
-                .then(function() {
-                  console.log('Mssql db created')
-                  return mssql.close()
-                })
-                .then(function() {
-                  console.log('Mssql db creation connection closed')
-                  mssqlConfig.database = databaseName
-                  console.log('Mssql will connect to', mssqlConfig.database)
-                  mssqlOptions.db = new MssqlCrLayer(mssqlConfig)
-                })
-          })
-        }
+        return mssql.connect().then(function() {
+          return createMssqlDb()
+              .then(function() {
+                console.log('Mssql db created')
+                return mssql.close()
+              })
+              .then(function() {
+                console.log('Mssql db creation connection closed')
+                mssqlConfig.database = databaseName
+                console.log('Mssql will connect to', mssqlConfig.database)
+                mssqlOptions.db = new MssqlCrLayer(mssqlConfig)
+              })
+        })
       })
 })
 
@@ -136,6 +134,10 @@ describe('mssql', function() {
 })
 
 after(function() {
-  mssqlOptions.db.close()
-  pgOptions.db.close()
+  if (mssqlOptions.db) {
+    mssqlOptions.db.close()
+  }
+  if (pgOptions.db) {
+    pgOptions.db.close()
+  }
 })
