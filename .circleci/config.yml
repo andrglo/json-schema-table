@@ -1,0 +1,105 @@
+version: 2.1
+
+jobs:
+  test:
+    working_directory: ~/repo
+    docker:
+      - image: circleci/node:12.0.0
+        environment:
+          NODE_ENV: test
+          POSTGRES_HOST: 127.0.0.1
+          MSSQL_HOST: 127.0.0.1
+          MSSQL_PASSWORD: Passw0rd
+          MSSQL_USER: sa
+      - image: mcr.microsoft.com/mssql/server:2017-CU12
+        environment:
+          ACCEPT_EULA: Y
+          SA_PASSWORD: Passw0rd
+      - image: postgres:11.2-alpine
+        environment:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+    steps:
+      - checkout
+      - restore_cache:
+          name: Restore Yarn Package Cache
+          keys:
+            - yarn-packages-{{ checksum "yarn.lock" }}
+      - run:
+          name: Install dependencies
+          command: |
+            yarn install --frozen-lockfile
+      - save_cache:
+          name: Save Yarn Package Cache
+          key: yarn-packages-{{ checksum "yarn.lock" }}
+          paths:
+            - ~/.cache/yarn
+      - run:
+          name: Waiting for postgres to be ready
+          command: |
+            for i in `seq 1 10`;
+            do
+              nc -z localhost 5432 && echo Success && exit 0
+              echo -n .
+              sleep 1
+            done
+            echo Failed waiting for postgres && exit 1
+      - run:
+          name: Waiting for mssql to be ready
+          command: |
+            for i in `seq 1 10`;
+            do
+              nc -z localhost 1433 && echo Success && exit 0
+              echo -n .
+              sleep 1
+            done
+            echo Failed waiting for mssql && exit 1
+      - run:
+          name: Tests
+          command: |
+            yarn test
+            yarn test:report:coverage
+      - persist_to_workspace:
+          root: ~/repo
+          paths: .
+
+  publish:
+    working_directory: ~/repo
+    docker:
+      - image: circleci/node:12.0.0
+    steps:
+      - attach_workspace:
+          at: ~/repo
+      - run:
+          name: Authenticate with registry
+          command: echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" > ~/repo/.npmrc
+      - run:
+          name: Publish package
+          command: |
+            PACK=$(npm view . name)
+            PUBLISHED_VERSION=$(npm view "$PACK" version)
+            PACKAGE_VERSION=$(cat package.json \
+              | grep version \
+              | head -1 \
+              | awk -F: '{ print $2 }' \
+              | sed 's/[", ]//g')
+            echo Package=$PACK, Published version=$PUBLISHED_VERSION, Package version=$PACKAGE_VERSION
+            if [ "$PUBLISHED_VERSION" == "$PACKAGE_VERSION" ]; then
+              echo " => Not publishing"
+            else
+              echo " => Will publish"
+              npm publish
+            fi
+
+workflows:
+  version: 2
+  test-n-publish:
+    jobs:
+      - test
+      - publish:
+          requires:
+            - test
+          filters:
+            branches:
+              only: master
+

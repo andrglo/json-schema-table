@@ -1,8 +1,8 @@
-# json-schema-table [![NPM version][npm-image]][npm-url] [![Build Status][travis-image]][travis-url] [![Dependency Status][daviddm-image]][daviddm-url] [![Coverage percentage][coveralls-image]][coveralls-url]
-> Creates and maintains a SQL table structure equivalent to a 
+# json-schema-table [![NPM version][npm-image]][npm-url] [![Dependency Status][daviddm-image]][daviddm-url] [![CircleCI](https://circleci.com/gh/andrglo/json-schema-table.svg?style=svg)](https://circleci.com/gh/andrglo/json-schema-table) [![Coverage Status](https://coveralls.io/repos/github/andrglo/json-schema-table/badge.svg?branch=master)](https://coveralls.io/github/andrglo/json-schema-table?branch=master)
+> Creates and maintains a SQL table structure equivalent to a
 json schema definition. For MSSQL and Postgres
 
-First you create all your tables and then syncronizes then 
+First you create all your tables and then syncronizes then
 with each other to create the references. You can sync whenever
 you modify your json schema
 
@@ -38,9 +38,9 @@ studentTable.create().then(function() {
 ```
  For the db connection you can use [mssql-cr-layer](https://github.com/andrglo/mssql-cr-layer)
  or [pg-cr-layer](https://github.com/andrglo/pg-cr-layer)
- 
+
  To more details take a look at the tests
- 
+
 ## License
 
 MIT © [Andre Gloria](andrglo.com)
@@ -48,9 +48,5 @@ MIT © [Andre Gloria](andrglo.com)
 
 [npm-image]: https://badge.fury.io/js/json-schema-table.svg
 [npm-url]: https://npmjs.org/package/json-schema-table
-[travis-image]: https://travis-ci.org/andrglo/json-schema-table.svg?branch=master
-[travis-url]: https://travis-ci.org/andrglo/json-schema-table
 [daviddm-image]: https://david-dm.org/andrglo/json-schema-table.svg?theme=shields.io
 [daviddm-url]: https://david-dm.org/andrglo/json-schema-table
-[coveralls-image]: https://coveralls.io/repos/andrglo/json-schema-table/badge.svg?branch=master&service=github
-[coveralls-url]: https://coveralls.io/github/andrglo/json-schema-table?branch=master
