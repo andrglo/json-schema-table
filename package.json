@@ -1,6 +1,6 @@
 {
   "name": "json-schema-table",
-  "version": "1.0.11",
+  "version": "1.0.12",
   "description": "Creates and maintains a SQL table structure",
   "repository": "https://github.com/andrglo/json-schema-table.git",
   "author": {
@@ -20,12 +20,12 @@
   ],
   "devDependencies": {
     "chai": "^4.2.0",
-    "coveralls": "^3.0.3",
-    "eslint": "^5.16.0",
-    "eslint-config-google": "^0.12.0",
-    "mocha": "^6.1.4",
+    "coveralls": "^3.0.5",
+    "eslint": "^6.0.1",
+    "eslint-config-google": "^0.13.0",
+    "mocha": "^6.2.0",
     "mssql-cr-layer": "^2.0.2",
-    "nyc": "^14.0.0",
+    "nyc": "^14.1.1",
     "pg-cr-layer": "^2.0.6"
   },
   "scripts": {
@@ -35,6 +35,6 @@
   },
   "license": "MIT",
   "dependencies": {
-    "lodash": "^4.17.11"
+    "lodash": "^4.17.15"
   }
 }
