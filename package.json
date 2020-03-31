@@ -20,13 +20,13 @@
   ],
   "devDependencies": {
     "chai": "^4.2.0",
-    "coveralls": "^3.0.9",
+    "coveralls": "^3.0.11",
     "eslint": "^6.8.0",
     "eslint-config-google": "^0.14.0",
-    "mocha": "^6.2.2",
-    "mssql-cr-layer": "^2.0.4",
+    "mocha": "^7.1.1",
+    "mssql-cr-layer": "^2.0.6",
     "nyc": "^15.0.0",
-    "pg-cr-layer": "^2.0.8"
+    "pg-cr-layer": "^2.0.9"
   },
   "scripts": {
     "test": "nyc mocha --bail --exit --timeout 15000 test/index.js",
