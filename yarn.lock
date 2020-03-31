@@ -1689,15 +1689,15 @@ ms@^2.1.1:
   resolved "https://registry.yarnpkg.com/ms/-/ms-2.1.2.tgz#d09d1f357b443f493382a8eb3ccd183872ae6009"
   integrity sha512-sGkPx+VjMtmA6MX27oA4FBFELFCZZ4S4XqeGOXCv68tT+jb3vk/RyaKWP0PTKyWtmLSM0b+adUTEvbs1PEaH2w==
 
-mssql-cr-layer@^2.0.6:
-  version "2.0.6"
-  resolved "https://registry.yarnpkg.com/mssql-cr-layer/-/mssql-cr-layer-2.0.6.tgz#73aa78a9c946a3da4dad6e6004558448bb4bc1dc"
-  integrity sha512-mZ6+zwy3GR35rovUYCbcKaGJew+k6Lsw4HLU/+PeoC21IgVu/s8esiZqw0meX8XQoe6mDj3rgrw28gIpTTOuQw==
+mssql-cr-layer@^2.0.7:
+  version "2.0.7"
+  resolved "https://registry.yarnpkg.com/mssql-cr-layer/-/mssql-cr-layer-2.0.7.tgz#b50946393de0be81149492369d3b8ad6843fce64"
+  integrity sha512-zBZHT/uvqgY+jw8KaaLiomQl/2M6MdG4eCnVx7qOpgnt8FHYzgbFCwHSscIKwVdst7RGB4WPc9bOXkByB6a8Aw==
   dependencies:
     lodash.every "^4.6.0"
-    mssql "^6.1.0"
+    mssql "^6.2.0"
 
-mssql@^6.1.0:
+mssql@^6.2.0:
   version "6.2.0"
   resolved "https://registry.yarnpkg.com/mssql/-/mssql-6.2.0.tgz#44af82701ffadf979baa0275b77a9ddb776f00c3"
   integrity sha512-C1WcvpiyGGoNyA+rNae/87V4O47S1P75zqmITutxzamocccY8BsZA+cljXJvpnYbbGlmMB5eoSaVUSqR9NyLCg==
@@ -1944,12 +1944,12 @@ pg-connection-string@0.1.3:
   resolved "https://registry.yarnpkg.com/pg-connection-string/-/pg-connection-string-0.1.3.tgz#da1847b20940e42ee1492beaf65d49d91b245df7"
   integrity sha1-2hhHsglA5C7hSSvq9l1J2RskXfc=
 
-pg-cr-layer@^2.0.9:
-  version "2.0.9"
-  resolved "https://registry.yarnpkg.com/pg-cr-layer/-/pg-cr-layer-2.0.9.tgz#0a58c9724c458d9e8c46ddc2565b8b795ae38431"
-  integrity sha512-kmnq6OUTw+hZ9LdUrN/C7eJBgE2LkrGYIkC6zm1qISd2gqtFg+j9ALuXpvQ97qsDg/cxvFzkfgDt6+3OMtM0jg==
+pg-cr-layer@^2.0.10:
+  version "2.0.10"
+  resolved "https://registry.yarnpkg.com/pg-cr-layer/-/pg-cr-layer-2.0.10.tgz#ccb86481283c443450e3905fa2b3062f6000bfdd"
+  integrity sha512-kRmr2rBS9PBnrFityp2bRIVA2fsmAhxCTZjByTA8tQV9nkAkydUnJHh0bwOeqvfg0fzVoIhGC2Jiw0ZiprVzvA==
   dependencies:
-    pg "^7.17.0"
+    pg "^8.0.0"
 
 pg-int8@1.0.1:
   version "1.0.1"
@@ -1961,10 +1961,10 @@ pg-packet-stream@^1.1.0:
   resolved "https://registry.yarnpkg.com/pg-packet-stream/-/pg-packet-stream-1.1.0.tgz#e45c3ae678b901a2873af1e17b92d787962ef914"
   integrity sha512-kRBH0tDIW/8lfnnOyTwKD23ygJ/kexQVXZs7gEyBljw4FYqimZFxnMMx50ndZ8In77QgfGuItS5LLclC2TtjYg==
 
-pg-pool@^2.0.10:
-  version "2.0.10"
-  resolved "https://registry.yarnpkg.com/pg-pool/-/pg-pool-2.0.10.tgz#842ee23b04e86824ce9d786430f8365082d81c4a"
-  integrity sha512-qdwzY92bHf3nwzIUcj+zJ0Qo5lpG/YxchahxIN8+ZVmXqkahKXsnl2aiJPHLYN9o5mB/leG+Xh6XKxtP7e0sjg==
+pg-pool@^3.0.0:
+  version "3.0.0"
+  resolved "https://registry.yarnpkg.com/pg-pool/-/pg-pool-3.0.0.tgz#2330d18888db1c444a67461122b44f83d2c9c231"
+  integrity sha512-AJWVHFre7CjOtu4D/PQjX+U9uhNKGRFSO9xQAzB7cn1Xu1vmhyo8s8eg9cw6kf2m2/+TYuvMH8i5jeFPSdllPw==
 
 pg-types@^2.1.0:
   version "2.2.0"
@@ -1977,16 +1977,16 @@ pg-types@^2.1.0:
     postgres-date "~1.0.4"
     postgres-interval "^1.1.0"
 
-pg@^7.17.0:
-  version "7.18.2"
-  resolved "https://registry.yarnpkg.com/pg/-/pg-7.18.2.tgz#4e219f05a00aff4db6aab1ba02f28ffa4513b0bb"
-  integrity sha512-Mvt0dGYMwvEADNKy5PMQGlzPudKcKKzJds/VbOeZJpb6f/pI3mmoXX0JksPgI3l3JPP/2Apq7F36O63J7mgveA==
+pg@^8.0.0:
+  version "8.0.0"
+  resolved "https://registry.yarnpkg.com/pg/-/pg-8.0.0.tgz#6559c6f895b9e735b3079995acb5de3f39ade59f"
+  integrity sha512-jinx9Xcmkeh7Y7gatu2EJiXr37mcDeF0G5X14MjqPMwYjoZMk7PMMSTTXQQl03GRp2IICxo/zyybqfv2RNgXsg==
   dependencies:
     buffer-writer "2.0.0"
     packet-reader "1.0.0"
     pg-connection-string "0.1.3"
     pg-packet-stream "^1.1.0"
-    pg-pool "^2.0.10"
+    pg-pool "^3.0.0"
     pg-types "^2.1.0"
     pgpass "1.x"
     semver "4.3.2"

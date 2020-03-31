@@ -4,14 +4,14 @@ jobs:
   test:
     working_directory: ~/repo
     docker:
-      - image: circleci/node:12.0.0
+      - image: circleci/node:12.16.1
         environment:
           NODE_ENV: test
           POSTGRES_HOST: 127.0.0.1
           MSSQL_HOST: 127.0.0.1
           MSSQL_PASSWORD: Passw0rd
           MSSQL_USER: sa
-      - image: mcr.microsoft.com/mssql/server:2017-CU12
+      - image: mcr.microsoft.com/mssql/server:2019-CU3-ubuntu-18.04
         environment:
           ACCEPT_EULA: Y
           SA_PASSWORD: Passw0rd
@@ -66,7 +66,7 @@ jobs:
   publish:
     working_directory: ~/repo
     docker:
-      - image: circleci/node:12.0.0
+      - image: circleci/node:12.16.1
     steps:
       - attach_workspace:
           at: ~/repo
