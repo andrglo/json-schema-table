@@ -3,7 +3,7 @@ version: '2'
 services:
 
   dms:
-    image: andrglo/everest:12.16.1
+    image: andrglo/everest:12.20.2
     hostname: json-schema-table
     command: tail -f /dev/null
     working_dir: /root/json-schema-table
