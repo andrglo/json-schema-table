@@ -3,7 +3,7 @@ version: '2'
 services:
 
   dms:
-    image: andrglo/everest:16.1.0
+    image: andrglo/everest:16.13.0
     hostname: json-schema-table
     command: tail -f /dev/null
     working_dir: /root/json-schema-table
@@ -18,7 +18,7 @@ services:
     restart: always
 
   mssql:
-    image: mcr.microsoft.com/mssql/server:2019-CU3-ubuntu-18.04
+    image: mcr.microsoft.com/mssql/server:2019-CU11-ubuntu-20.04
     environment:
       - ACCEPT_EULA=Y
       - SA_PASSWORD=Passw0rd
