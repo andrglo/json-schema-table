@@ -1,6 +1,6 @@
 {
   "name": "json-schema-table",
-  "version": "1.0.23",
+  "version": "1.0.24",
   "description": "Creates and maintains a SQL table structure",
   "repository": "https://github.com/andrglo/json-schema-table.git",
   "author": {
@@ -31,7 +31,7 @@
   "scripts": {
     "test": "nyc mocha --bail --exit --timeout 15000 test/index.js",
     "test:report:coverage": "nyc report --reporter=text-lcov | coveralls",
-    "ssh": "docker exec -it json-schema-table_dms_1 fish"
+    "ssh": "docker exec -it json-schema-table-dms-1 fish"
   },
   "license": "MIT",
   "dependencies": {
