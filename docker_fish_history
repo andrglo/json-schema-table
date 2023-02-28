@@ -1,9 +1,9 @@
-- cmd: yarn upgrade-interactive --latest
+- cmd: ncu --interactive --format group
    when: 1470615608
 - cmd: nc -zv postgres 5432
    when: 1470615608
 - cmd: nc -zv mssql 1433
    when: 1470615608
-- cmd: yarn test
+- cmd: npm test
    when: 1470615608
 

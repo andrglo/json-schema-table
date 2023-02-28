@@ -3,7 +3,7 @@ version: '2'
 services:
 
   dms:
-    image: andrglo/everest:16.16.0
+    image: andrglo/everest:18.14.2
     hostname: json-schema-table
     container_name: json-schema-table-dms-1
     command: tail -f /dev/null
@@ -27,7 +27,7 @@ services:
     restart: always
 
   postgres:
-    image: postgres:12.2-alpine
+    image: postgres:15.2-alpine
     container_name: json-schema-table-postges-1
     environment:
       - POSTGRES_USER=postgres

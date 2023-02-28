@@ -4,7 +4,7 @@ jobs:
   test:
     working_directory: ~/repo
     docker:
-      - image: circleci/node:16
+      - image: cimg/node:18.14.2
         environment:
           NODE_ENV: test
           POSTGRES_HOST: 127.0.0.1
@@ -15,25 +15,25 @@ jobs:
         environment:
           ACCEPT_EULA: Y
           SA_PASSWORD: Passw0rd
-      - image: postgres:11.2-alpine
+      - image: postgres:15.2-alpine
         environment:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
     steps:
       - checkout
       - restore_cache:
-          name: Restore Yarn Package Cache
+          name: Restore NPM Package Cache
           keys:
-            - yarn-packages-{{ checksum "yarn.lock" }}
+            - npm-packages-{{ checksum "package-lock.json" }}
       - run:
           name: Install dependencies
           command: |
-            yarn install --frozen-lockfile
+            npm install
       - save_cache:
-          name: Save Yarn Package Cache
-          key: yarn-packages-{{ checksum "yarn.lock" }}
+          name: Save NPM Package Cache
+          key: npm-packages-{{ checksum "package-lock.json" }}
           paths:
-            - ~/.cache/yarn
+            - ~/.cache/npm
       - run:
           name: Waiting for postgres to be ready
           command: |
@@ -57,8 +57,8 @@ jobs:
       - run:
           name: Tests
           command: |
-            yarn test
-            yarn test:report:coverage
+            npm test
+            npm run test:report:coverage
       - persist_to_workspace:
           root: ~/repo
           paths: .
@@ -66,13 +66,10 @@ jobs:
   publish:
     working_directory: ~/repo
     docker:
-      - image: circleci/node:16
+      - image: cimg/node:18.14.2
     steps:
       - attach_workspace:
           at: ~/repo
-      - run:
-          name: Authenticate with registry
-          command: echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" > ~/repo/.npmrc
       - run:
           name: Publish package
           command: |
@@ -88,11 +85,11 @@ jobs:
               echo " => Not publishing"
             else
               echo " => Will publish"
+              npm set //registry.npmjs.org/:_authToken=$NPM_TOKEN
               npm publish
             fi
 
 workflows:
-  version: 2
   test-n-publish:
     jobs:
       - test
