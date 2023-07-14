@@ -22,8 +22,7 @@
       "decimals": 0
     },
     "lastSale": {
-      "type": "datetime",
-      "timezone": "ignore"
+      "type": "datetime"
     },
     "cityTax": {
       "type": "object",

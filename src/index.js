@@ -597,10 +597,10 @@ function propertyToMssql(property, name, schema) {
       column = 'DATE'
       break
     case 'datetime':
-      if (property.timezone === 'ignore') {
-        column = this.datetime === true ? 'DATETIME' : 'DATETIME2'
-      } else {
+      if (property.timezone === true) {
         column = 'DATETIMEOFFSET'
+      } else {
+        column = 'DATETIME2'
       }
       break
     case 'number':
@@ -716,16 +716,10 @@ function propertyToPostgres(property, name, schema, isAlter) {
       column = 'DATE'
       break
     case 'time':
-      column = 'TIME'
-      if (property.timezone !== 'ignore') {
-        column += ' WITH TIME ZONE'
-      }
+      column = 'TIME WITH TIME ZONE'
       break
     case 'datetime':
-      column = 'TIMESTAMP'
-      if (property.timezone !== 'ignore') {
-        column += ' WITH TIME ZONE'
-      }
+      column = 'TIMESTAMP WITH TIME ZONE'
       break
     case 'number':
       if (property.decimals && property.decimals > 0) {
@@ -790,14 +784,12 @@ function postgresToProperty(metadata) {
       break
     case 'time':
       property.type = 'time'
-      property.timezone = 'ignore'
       break
     case 'time with time zone':
       property.type = 'time'
       break
     case 'timestamp':
       property.type = 'datetime'
-      property.timezone = 'ignore'
       break
     case 'timestamp without time zone':
     case 'timestamp with time zone':
