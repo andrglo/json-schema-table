@@ -1,4 +1,4 @@
-# json-schema-table [![NPM version][npm-image]][npm-url] [![Dependency Status][daviddm-image]][daviddm-url] [![CircleCI](https://circleci.com/gh/andrglo/json-schema-table.svg?style=svg)](https://circleci.com/gh/andrglo/json-schema-table) [![Coverage Status](https://coveralls.io/repos/github/andrglo/json-schema-table/badge.svg?branch=master)](https://coveralls.io/github/andrglo/json-schema-table?branch=master)
+# json-schema-table [![NPM version][npm-image]][npm-url] [![Dependency Status][daviddm-image]][daviddm-url] [![CircleCI](https://circleci.com/gh/andrglo/json-schema-table.svg?style=svg)](https://circleci.com/gh/andrglo/json-schema-table)
 > Creates and maintains a SQL table structure equivalent to a
 json schema definition. For MSSQL and Postgres
 

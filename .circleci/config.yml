@@ -11,7 +11,9 @@ jobs:
           MSSQL_HOST: 127.0.0.1
           MSSQL_PASSWORD: Passw0rd
           MSSQL_USER: sa
-      - image: mcr.microsoft.com/mssql/server:2019-CU3-ubuntu-18.04
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+      - image: mcr.microsoft.com/mssql/server:2022-CU14-ubuntu-20.04
         environment:
           ACCEPT_EULA: Y
           SA_PASSWORD: Passw0rd
