@@ -1,6 +1,6 @@
 {
   "name": "json-schema-table",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "Creates and maintains a SQL table structure",
   "repository": "https://github.com/andrglo/json-schema-table.git",
   "author": {
@@ -19,18 +19,15 @@
     "mssql"
   ],
   "devDependencies": {
-    "chai": "^4.3.7",
-    "coveralls": "^3.1.1",
-    "eslint": "^8.45.0",
+    "chai": "^5.1.1",
+    "eslint": "^9.11.1",
     "eslint-config-google": "^0.14.0",
-    "mocha": "^10.2.0",
-    "mssql-cr-layer": "^3.0.0",
-    "nyc": "^15.1.0",
-    "pg-cr-layer": "^2.0.21"
+    "mocha": "^10.7.3",
+    "mssql-cr-layer": "^3.0.1",
+    "pg-cr-layer": "^2.0.23"
   },
   "scripts": {
-    "test": "nyc mocha --bail --exit --timeout 30000 test/index.js",
-    "test:report:coverage": "nyc report --reporter=text-lcov | coveralls",
+    "test": "mocha --bail --exit --timeout 30000 test/index.js",
     "ssh": "docker exec -it json-schema-table-dms-1 fish"
   },
   "license": "MIT",

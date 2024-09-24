@@ -1,5 +1,4 @@
 const jsonSchemaTable = require('../src')
-const chai = require('chai')
 const _ = require('lodash')
 const utils = require('../src/utils')
 
@@ -15,9 +14,7 @@ const refforfabSchema = require('./schemas/refforfab.json')
 let modifiedClientSchema
 let modifiedPersonSchema
 let modifiedTaxSchema
-
-const expect = chai.expect
-chai.should()
+let expect
 
 function checkColumns(columns, schema) {
   expect(Object.keys(columns).length).to.equal(
@@ -98,6 +95,12 @@ function checkForeignKey(fks, columns, refTable, refTableColumns) {
 
 module.exports = function(options) {
   let db
+  before(function() {
+    return import('chai').then(chai => {
+      chai.should()
+      expect = chai.expect
+    })
+  })
   describe('Table with no references', function() {
     it('should not sync person before its created', function(done) {
       db = options.db
