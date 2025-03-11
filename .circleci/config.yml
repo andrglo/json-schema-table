@@ -4,7 +4,7 @@ jobs:
   test:
     working_directory: ~/repo
     docker:
-      - image: cimg/node:20.17.0
+      - image: cimg/node:23.9.0
         environment:
           NODE_ENV: test
           POSTGRES_HOST: 127.0.0.1
@@ -67,7 +67,7 @@ jobs:
   publish:
     working_directory: ~/repo
     docker:
-      - image: cimg/node:20.17.0
+      - image: cimg/node:23.9.0
     steps:
       - attach_workspace:
           at: ~/repo
