@@ -19,12 +19,12 @@
     "mssql"
   ],
   "devDependencies": {
-    "chai": "^5.2.0",
-    "eslint": "^9.22.0",
+    "chai": "^6.2.1",
+    "eslint": "^9.39.1",
     "eslint-config-google": "^0.14.0",
-    "mocha": "^11.1.0",
-    "mssql-cr-layer": "^3.0.2",
-    "pg-cr-layer": "^2.0.24"
+    "mocha": "^11.7.5",
+    "mssql-cr-layer": "^3.0.3",
+    "pg-cr-layer": "^2.0.25"
   },
   "scripts": {
     "test": "mocha --bail --exit --timeout 30000 test/index.js",
